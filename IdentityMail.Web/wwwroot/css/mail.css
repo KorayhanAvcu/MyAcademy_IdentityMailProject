@@ -1,0 +1,215 @@
+/* Kart */
+.mail-list-card {
+    background: var(--surface-container-lowest);
+    border-radius: 18px;
+    box-shadow: 0 3px 15px rgba(0,0,0,.05);
+}
+
+/* Tablo */
+.mail-table {
+    border-color: var(--outline-variant);
+}
+
+    .mail-table thead th {
+        border: none;
+        color: var(--on-surface-variant);
+        font-weight: 600;
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: .03em;
+        padding-bottom: 12px;
+    }
+
+    .mail-table tbody tr {
+        transition: .2s;
+    }
+
+        .mail-table tbody tr:hover {
+            background: var(--surface-container-low);
+        }
+
+    .mail-table td {
+        border-color: var(--outline-variant);
+        padding: 14px 12px;
+    }
+
+/* Okunmamýþ */
+.unread-row {
+    font-weight: 600;
+    background: var(--surface-container-low);
+}
+
+/* Yýldýz */
+.mail-star {
+    font-size: 22px;
+    color: var(--outline);
+    cursor: pointer;
+    transition: .2s;
+    font-variation-settings: 'FILL' 0;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+
+    .mail-star:hover {
+        color: #ffb300;
+    }
+
+    .mail-star.active {
+        color: #ffb300;
+        font-variation-settings: 'FILL' 1;
+    }
+
+/* Ýkon Buton */
+.btn-icon {
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+/* Mail Detay */
+
+.mail-card {
+    width: 100%;
+    max-width: 900px;
+    margin: auto;
+    background: var(--surface-container-lowest);
+    border-radius: 18px;
+    box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    padding: 25px;
+}
+
+.mail-row {
+    display: flex;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+.mail-label {
+    width: 140px;
+    color: var(--secondary);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.mail-value {
+    flex: 1;
+}
+
+.mail-body-box {
+    margin-top: 25px;
+}
+
+.mail-text {
+    min-height: 220px;
+    padding: 20px;
+    background: var(--surface-container-low);
+    border-radius: 12px;
+    line-height: 1.7;
+    white-space: pre-line;
+}
+
+.mail-actions {
+    margin-top: 25px;
+}
+
+/* Compose */
+
+.compose-card {
+    background: var(--surface-container-lowest);
+    border-radius: 18px;
+    box-shadow: 0 3px 15px rgba(0,0,0,.05);
+    overflow: hidden;
+    width: 100%;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.compose-field {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--outline-variant);
+}
+
+    .compose-field:focus-within {
+        border-color: var(--primary);
+    }
+
+.compose-label {
+    min-width: 60px;
+    color: var(--secondary);
+    font-weight: 500;
+}
+
+.compose-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+}
+
+.compose-textarea {
+    width: 100%;
+    min-height: 350px;
+    border: none;
+    outline: none;
+    resize: vertical;
+    background: transparent;
+}
+
+.compose-toolbar {
+    background: var(--surface-container-low);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+}
+
+/* Responsive */
+
+@media (max-width:767.98px) {
+
+    .mail-list-card {
+        padding: 12px !important;
+    }
+
+    .mail-table td,
+    .mail-table th {
+        padding: 10px 6px;
+        font-size: 13px;
+    }
+
+    .compose-card {
+        max-width: 100%;
+    }
+
+    .compose-field {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 6px;
+    }
+
+    .compose-label {
+        min-width: unset;
+    }
+
+    .compose-input {
+        width: 100%;
+    }
+
+    .mail-row {
+        flex-direction: column;
+        gap: 5px;
+    }
+
+    .mail-label {
+        width: auto;
+    }
+
+    .mail-card {
+        padding: 18px;
+    }
+}

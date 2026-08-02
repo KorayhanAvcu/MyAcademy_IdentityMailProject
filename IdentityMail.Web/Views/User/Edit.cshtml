@@ -1,0 +1,167 @@
+﻿@model EditProfileDto
+
+@{
+    ViewData["Title"] = "Profil Düzenle";
+    Layout = "~/Views/AdminLayout/Layout.cshtml";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1">Profil Düzenle</h2>
+    <p class="text-muted mb-0">
+        Kişisel bilgilerinizi güncelleyebilirsiniz.
+    </p>
+</div>
+
+<form method="post" class="compose-card">
+
+    <div class="p-3">
+
+        <!-- Ad -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="FirstName">Ad</label>
+            <input asp-for="FirstName"
+                   class="compose-input"
+                   placeholder="Adınızı giriniz..." />
+        </div>
+        <span class="text-danger small" asp-validation-for="FirstName"></span>
+
+        <!-- Soyad -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="LastName">Soyad</label>
+            <input asp-for="LastName"
+                   class="compose-input"
+                   placeholder="Soyadınızı giriniz..." />
+        </div>
+        <span class="text-danger small" asp-validation-for="LastName"></span>
+
+        <!-- Profil Resmi -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="ProfileImageUrl">
+                Fotoğraf
+            </label>
+
+            <input asp-for="ProfileImageUrl"
+                   class="compose-input"
+                   placeholder="https://..." />
+        </div>
+        <span class="text-danger small" asp-validation-for="ProfileImageUrl"></span>
+
+        @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+        {
+            <div class="text-center mt-4">
+                <img src="@Model.ProfileImageUrl"
+                     class="profile-preview"
+                     alt="Profil Fotoğrafı" />
+            </div>
+        }
+
+    </div>
+
+    <div class="compose-toolbar">
+
+        <div asp-validation-summary="ModelOnly"
+             class="text-danger small">
+        </div>
+
+        <button type="submit"
+                class="btn btn-primary d-flex align-items-center gap-2 ms-auto">
+
+            <span>Bilgileri Güncelle</span>
+            <i class="bi bi-check-circle"></i>
+
+        </button>
+
+    </div>
+
+</form>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
+
+<style>
+
+    .compose-card {
+        background: var(--surface-container-lowest);
+        border-radius: 18px;
+        box-shadow: 0 3px 15px rgba(0,0,0,.05);
+        overflow: hidden;
+        width: 100%;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .compose-field {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 14px 0;
+        border-bottom: 1px solid var(--outline-variant);
+    }
+
+        .compose-field:focus-within {
+            border-color: var(--primary);
+        }
+
+    .compose-label {
+        color: var(--secondary);
+        font-weight: 500;
+        font-size: 14px;
+        min-width: 80px;
+        margin-bottom: 0;
+    }
+
+    .compose-input {
+        flex: 1;
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: 15px;
+        color: var(--on-surface);
+        padding: 8px 0;
+    }
+
+    .compose-toolbar {
+        background: var(--surface-container-low);
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+    }
+
+    .profile-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 3px solid var(--outline-variant);
+    }
+
+    @@media(max-width:767.98px) {
+
+        .compose-card {
+            max-width: 100%;
+        }
+
+        .compose-field {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .compose-label {
+            min-width: unset;
+        }
+
+        .compose-input {
+            width: 100%;
+        }
+
+        .profile-preview {
+            width: 90px;
+            height: 90px;
+        }
+    }
+
+</style>

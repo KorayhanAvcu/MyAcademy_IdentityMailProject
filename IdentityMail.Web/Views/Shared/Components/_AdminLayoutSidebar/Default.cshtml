@@ -1,0 +1,152 @@
+﻿@model AppUser
+
+<aside class="mail-sidebar d-none d-md-flex">
+
+    <!-- Logo -->
+    <div class="mail-sidebar-header">
+        <div class="d-flex align-items-center">
+            <div class="logo-circle me-3">
+                <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div>
+                <h4 class="mb-0">Identity Mail</h4>
+                <small class="text-muted">Mail Yönetim Sistemi</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compose Button -->
+    <div class="px-3 mt-2 mb-2">
+        <a asp-controller="Message"
+           asp-action="SendMail"
+           class="btn btn-primary w-100 py-2">
+            <i class="bi bi-pencil-square me-2"></i>
+            E-Posta Oluştur
+        </a>
+    </div>
+
+    <!-- Menü -->
+    <nav class="list-group list-group-flush">
+        <a asp-controller="Message"
+           asp-action="Index"
+           class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+            <i class="bi bi-inbox-fill me-3"></i>
+            Gelen Kutusu
+        </a>
+
+        <a asp-controller="Message"
+           asp-action="SentMail"
+           class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "SentMail" ? "active" : "")">
+            <i class="bi bi-send-fill me-3"></i>
+            Gönderilenler
+        </a>
+
+        <a asp-controller="Message"
+           asp-action="Important"
+           class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Important" ? "active" : "")">
+            <i class="bi bi-star-fill me-3"></i>
+            Önemli
+        </a>
+
+        <a asp-controller="Message"
+           asp-action="Trash"
+           class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Trash" ? "active" : "")">
+            <i class="bi bi-trash-fill me-3"></i>
+            Çöp Kutusu
+        </a>
+    </nav>
+
+    <!-- Kullanıcı -->
+    <div class="sidebar-user mt-auto p-3 border-top">
+
+        <div class="d-flex align-items-center">
+
+            @if (!string.IsNullOrWhiteSpace(Model.ProfileImageUrl))
+            {
+                <img src="@Model.ProfileImageUrl"
+                     alt="Profil Fotoğrafı"
+                     class="user-avatar-img" />
+            }
+            else
+            {
+                <div class="user-avatar">
+                    <i class="bi bi-person-fill"></i>
+                </div>
+            }
+
+            <div class="ms-3">
+                <div class="fw-semibold" style="font-size:14px;">
+                    @Model.FirstName @Model.LastName
+                </div>
+                <small class="text-muted">Kullanıcı</small>
+            </div>
+
+        </div>
+
+        <a asp-controller="Auth"
+           asp-action="Logout"
+           class="btn btn-outline-danger w-100 mt-3">
+            <i class="bi bi-box-arrow-right me-2"></i>
+            Çıkış Yap
+        </a>
+
+    </div>
+
+</aside>
+
+<!-- Mobil Alt Navigasyon -->
+<nav class="mobile-bottom-nav d-md-none">
+
+    <a asp-controller="Message"
+       asp-action="Index"
+       class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
+        <i class="bi bi-inbox"></i>
+        <span>Gelen Kutusu</span>
+    </a>
+
+    <a asp-controller="Message"
+       asp-action="SentMail"
+       class="@(ViewContext.RouteData.Values["action"]?.ToString() == "SentMail" ? "active" : "")">
+        <i class="bi bi-send"></i>
+        <span>Gönderilenler</span>
+    </a>
+
+    <a asp-controller="Message"
+       asp-action="Important"
+       class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Important" ? "active" : "")">
+        <i class="bi bi-star"></i>
+        <span>Önemli</span>
+    </a>
+
+    <a asp-controller="Message"
+       asp-action="Trash"
+       class="@(ViewContext.RouteData.Values["action"]?.ToString() == "Trash" ? "active" : "")">
+        <i class="bi bi-trash"></i>
+        <span>Çöp</span>
+    </a>
+
+</nav>
+
+<style>
+    .user-avatar-img {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid var(--outline-variant);
+        flex-shrink: 0;
+    }
+
+    .user-avatar {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        flex-shrink: 0;
+    }
+</style>

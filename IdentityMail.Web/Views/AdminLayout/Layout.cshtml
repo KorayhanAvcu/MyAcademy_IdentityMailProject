@@ -1,0 +1,21 @@
+﻿@{
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="tr">
+@await Component.InvokeAsync("_AdminLayoutHead")
+<body>
+    @await Component.InvokeAsync("_AdminLayoutSidebar")
+    @await Component.InvokeAsync("_AdminLayoutTopnavbar")
+
+    <main class="mail-content">
+        @RenderBody()
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+    @RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,47 @@
+﻿@model SendMailDto
+@{
+    ViewData["Title"] = "Yeni Mail Gönder";
+    Layout = "~/Views/AdminLayout/Layout.cshtml";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1">Yeni Mail Gönder</h2>
+    <p class="text-muted mb-0">Alıcıya göndermek istediğiniz mesajı oluşturun</p>
+</div>
+
+<form method="post" class="compose-card">
+
+    <div class="p-3">
+
+        <!-- Alıcı -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="ReceiverMail">Kime</label>
+            <input type="email" class="compose-input" asp-for="ReceiverMail" placeholder="E-posta adresi girin..." required />
+        </div>
+        <span class="text-danger small" asp-validation-for="ReceiverMail"></span>
+
+        <!-- Konu -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="Subject">Konu</label>
+            <input type="text" class="compose-input" asp-for="Subject" placeholder="Mesajınızın konusu" required />
+        </div>
+        <span class="text-danger small" asp-validation-for="Subject"></span>
+
+        <!-- Mesaj -->
+        <div class="pt-2">
+            <textarea rows="10" class="compose-textarea" asp-for="Body" placeholder="Mesajınızı buraya yazın..." required></textarea>
+        </div>
+        <span class="text-danger small" asp-validation-for="Body"></span>
+
+    </div>
+
+    <div class="compose-toolbar">
+        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 ms-auto">
+            <span>Gönder</span>
+            <i class="bi bi-send"></i>
+        </button>
+    </div>
+
+</form>
+

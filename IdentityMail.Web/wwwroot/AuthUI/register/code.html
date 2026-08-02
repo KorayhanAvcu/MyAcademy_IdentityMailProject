@@ -1,0 +1,134 @@
+<html lang="tr"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" name="viewport"/><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config = { darkMode: "class", theme: { extend: { "colors": { "error": "#ba1a1a", "on-primary-fixed": "#001a41", "tertiary-container": "#6f7783", "inverse-primary": "#adc7ff", "tertiary-fixed-dim": "#bfc7d4", "on-tertiary": "#ffffff", "on-secondary-fixed": "#001a41", "surface-tint": "#005bc0", "secondary": "#005ac1", "on-error": "#ffffff", "primary-fixed": "#d8e2ff", "tertiary": "#565e6a", "on-error-container": "#93000a", "on-secondary-fixed-variant": "#004494", "outline": "#727785", "on-primary-container": "#ffffff", "outline-variant": "#c1c6d6", "background": "#faf9fd", "error-container": "#ffdad6", "on-surface-variant": "#414754", "surface": "#faf9fd", "on-secondary-container": "#00285c", "surface-container-high": "#e9e7eb", "secondary-fixed-dim": "#adc6ff", "secondary-fixed": "#d8e2ff", "inverse-on-surface": "#f1f0f4", "on-tertiary-container": "#ffffff", "on-tertiary-fixed": "#141c26", "surface-dim": "#dbd9dd", "on-primary": "#ffffff", "surface-container-lowest": "#ffffff", "secondary-container": "#4d8efe", "on-surface": "#1a1b1e", "on-background": "#1a1b1e", "surface-container": "#efedf1", "primary-fixed-dim": "#adc7ff", "surface-container-highest": "#e3e2e6", "on-tertiary-fixed-variant": "#3f4752", "surface-bright": "#faf9fd", "tertiary-fixed": "#dbe3f1", "surface-container-low": "#f4f3f7", "inverse-surface": "#2f3033", "on-secondary": "#ffffff", "primary": "#005bbf", "on-primary-fixed-variant": "#004493", "surface-variant": "#e3e2e6", "primary-container": "#1a73e8" }, "borderRadius": { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" }, "spacing": { "xs": "8px", "md": "16px", "margin-mobile": "16px", "sm": "12px", "margin-desktop": "24px", "xl": "32px", "container-max": "1440px", "gutter": "16px", "lg": "24px", "base": "4px" }, "fontFamily": { "body-lg": ["Inter"], "body-md": ["Inter"], "display-lg": ["Inter"], "label-md": ["Inter"], "title-md": ["Inter"], "headline-lg-mobile": ["Inter"], "headline-lg": ["Inter"] }, "fontSize": { "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}], "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}], "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}], "label-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}], "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "500"}], "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}], "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}] } } } };</script><style>@layer base { body { -webkit-tap-highlight-color: transparent; } .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); } .pt-safe { padding-top: env(safe-area-inset-top, 0px); } }</style></head><body class="bg-surface min-h-screen flex flex-col font-body-md text-on-surface"><main class="flex-grow flex flex-col items-center px-margin-mobile pt-xl"><div class="w-full max-w-sm flex flex-col items-center"><div class="mb-xl pt-safe"><img alt="Lüminans Mail Logo" class="h-12 w-auto object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCV7KPU4vbU6mbfyIHUQO1bTmqDuzZEmu_OUKktjQFwHCZkHWAyGcoHJM_P0nKW_Nm9-ctylTAQhZzMtGOLyBXfQv4Uu6Q2KruRglbq-oc0VQSVm4SFX_tiRPv9qMvYaUC-8Puwk6r8ZKV5wc3GyaNegJFC7JCBo1qxg4r8KY7uFI0pNXtAx3fouqgpxujY5t8IpBQZF0mNbw1RSwodXxpMgamxU4kCtIeua0AWcxmYt4whEOXMQJNP"/></div><div class="w-full bg-surface-container-low rounded-xl p-lg shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex flex-col w-full">
+<!-- Header & Description -->
+<div class="mb-lg text-center">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface mb-xs">Kullanıcı Kaydı</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Lüminans dünyasına katılmak için bilgilerinizi girin.</p>
+</div>
+<!-- Registration Form -->
+<form class="space-y-md" id="registerForm" onsubmit="return false;">
+<!-- Name Group -->
+<div class="grid grid-cols-2 gap-sm">
+<div class="relative group">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="firstName">Ad</label>
+<input class="w-full bg-surface px-md py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="firstName" name="firstName" placeholder="Örn: Selin" type="text"/>
+</div>
+<div class="relative group">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="lastName">Soyad</label>
+<input class="w-full bg-surface px-md py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="lastName" name="lastName" placeholder="Örn: Yılmaz" type="text"/>
+</div>
+</div>
+<!-- Username -->
+<div class="relative">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="userName">Kullanıcı Adı</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-on-surface-variant text-[20px]">alternate_email</span>
+<input class="w-full bg-surface pl-xl pr-md py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="userName" name="userName" placeholder="kullaniciadi" type="text"/>
+</div>
+</div>
+<!-- Email -->
+<div class="relative">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="email">E-posta</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-on-surface-variant text-[20px]">mail</span>
+<input class="w-full bg-surface pl-xl pr-md py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="email" name="email" placeholder="ornek@mail.com" type="email"/>
+</div>
+</div>
+<!-- Password Group -->
+<div class="space-y-md pt-xs">
+<div class="relative">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="password">Şifre</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-on-surface-variant text-[20px]">lock</span>
+<input class="w-full bg-surface pl-xl pr-[48px] py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="password" name="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-md flex items-center justify-center text-on-surface-variant hover:text-primary transition-colors" onclick="togglePassword('password')" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</div>
+<div class="relative">
+<label class="font-label-md text-label-md text-on-surface-variant mb-base block ml-1" for="confirmPassword">Şifre Tekrarı</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-md text-on-surface-variant text-[20px]">enhanced_encryption</span>
+<input class="w-full bg-surface pl-xl pr-[48px] py-sm rounded-lg font-body-md text-body-md text-on-surface outline-none transition-all focus:ring-2 focus:ring-primary/20 border-none shadow-sm placeholder:text-outline-variant" id="confirmPassword" name="confirmPassword" placeholder="••••••••" type="password"/>
+</div>
+</div>
+</div>
+<!-- Password Strength Indicator (Visual Delight) -->
+<div class="px-1 space-y-xs">
+<div class="flex gap-1 h-1 w-full rounded-full overflow-hidden bg-surface-container-highest">
+<div class="h-full w-0 transition-all duration-500 bg-error" id="strengthBar"></div>
+</div>
+<p class="font-label-md text-label-md text-on-surface-variant" id="strengthText">Güvenli bir şifre belirleyin</p>
+</div>
+<!-- Submit Button -->
+<button class="w-full bg-primary text-on-primary font-title-md text-title-md py-md rounded-full shadow-md hover:shadow-xl hover:translate-y-[-1px] active:translate-y-[1px] active:shadow-sm transition-all duration-200 flex items-center justify-center gap-xs mt-lg" id="submitBtn" type="submit">
+<span>Kayıt Ol</span>
+<span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</form>
+<!-- Login Redirect -->
+<div class="mt-xl text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">
+      Zaten bir hesabınız var mı? 
+      <a class="text-primary font-semibold hover:underline decoration-2 underline-offset-4 transition-all" href="#">Giriş Yap</a>
+</p>
+</div>
+<script>
+    function togglePassword(id) {
+      const input = document.getElementById(id);
+      const icon = event.currentTarget.querySelector('.material-symbols-outlined');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.innerText = 'visibility_off';
+      } else {
+        input.type = 'password';
+        icon.innerText = 'visibility';
+      }
+    }
+
+    // Micro-interaction for Password Strength
+    const passwordInput = document.getElementById('password');
+    const strengthBar = document.getElementById('strengthBar');
+    const strengthText = document.getElementById('strengthText');
+
+    passwordInput.addEventListener('input', (e) => {
+      const val = e.target.value;
+      let strength = 0;
+      if (val.length > 5) strength += 30;
+      if (val.match(/[A-Z]/)) strength += 20;
+      if (val.match(/[0-9]/)) strength += 20;
+      if (val.match(/[^A-Za-z0-9]/)) strength += 30;
+
+      strengthBar.style.width = strength + '%';
+      
+      if (strength < 40) {
+        strengthBar.className = 'h-full transition-all duration-500 bg-error';
+        strengthText.innerText = 'Zayıf şifre';
+        strengthText.className = 'font-label-md text-label-md text-error';
+      } else if (strength < 80) {
+        strengthBar.className = 'h-full transition-all duration-500 bg-secondary-container';
+        strengthText.innerText = 'Orta seviye şifre';
+        strengthText.className = 'font-label-md text-label-md text-secondary';
+      } else {
+        strengthBar.className = 'h-full transition-all duration-500 bg-primary';
+        strengthText.innerText = 'Güçlü şifre!';
+        strengthText.className = 'font-label-md text-label-md text-primary';
+      }
+    });
+
+    // Form feedback
+    document.getElementById('registerForm').addEventListener('submit', (e) => {
+        const btn = document.getElementById('submitBtn');
+        const originalContent = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="material-symbols-outlined animate-spin">progress_activity</span> İşleniyor...';
+        
+        setTimeout(() => {
+            btn.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Başarılı!';
+            btn.classList.replace('bg-primary', 'bg-secondary-container');
+            btn.classList.add('text-on-secondary-container');
+        }, 1500);
+    });
+  </script>
+</div></div></div></main><footer class="p-lg text-center pb-safe"><p class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Lüminans Mail © 2024</p></footer></body></html>

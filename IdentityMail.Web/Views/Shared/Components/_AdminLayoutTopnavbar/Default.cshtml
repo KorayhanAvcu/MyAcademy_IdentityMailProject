@@ -1,0 +1,101 @@
+﻿@model AppUser
+
+<header class="mail-navbar">
+    <nav class="navbar navbar-expand-lg bg-transparent w-100">
+        <div class="container-fluid px-0">
+
+            <!-- Arama -->
+            <form class="flex-grow-1 me-4">
+                <div class="input-group">
+                    <span class="input-group-text border-end-0">
+                        <i class="bi bi-search text-muted"></i>
+                    </span>
+                    <input type="text"
+                           class="form-control border-start-0"
+                           placeholder="E-postalarda ara..." />
+                </div>
+            </form>
+
+            <!-- Sağ -->
+            <div class="d-flex align-items-center">
+
+                <div class="dropdown">
+                    <a href="#"
+                       class="d-flex align-items-center text-decoration-none"
+                       data-bs-toggle="dropdown">
+
+                        @if (!string.IsNullOrEmpty(Model?.ProfileImageUrl))
+                        {
+                            <img src="@Model.ProfileImageUrl"
+                                 class="rounded-circle"
+                                 style="width:38px;height:38px;object-fit:cover;" />
+                        }
+                        else
+                        {
+                            <div class="user-avatar"
+                                 style="width:38px;height:38px;">
+                                <i class="bi bi-person-fill"></i>
+                            </div>
+                        }
+
+                        <div class="ms-2 d-none d-md-block">
+                            <div class="fw-semibold" style="font-size:13px;">
+                                @Model?.FirstName @Model?.LastName
+                            </div>
+                            <small class="text-muted" style="font-size:11px;">
+                                Kullanıcı
+                            </small>
+                        </div>
+                    </a>
+
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0"
+                        style="border-radius:16px;">
+
+                        <li>
+                            <a class="dropdown-item"
+                               asp-controller="User"
+                               asp-action="Edit">
+                                <i class="bi bi-person me-2"></i>
+                                Profil
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               asp-controller="Message"
+                               asp-action="Index">
+                                <i class="bi bi-inbox me-2"></i>
+                                Gelen Kutusu
+                            </a>
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item"
+                               asp-controller="Message"
+                               asp-action="SendMail">
+                                <i class="bi bi-pencil-square me-2"></i>
+                                Yeni Mesaj
+                            </a>
+                        </li>
+
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+
+                        <li>
+                            <a class="dropdown-item text-danger"
+                               asp-controller="Auth"
+                               asp-action="Logout">
+                                <i class="bi bi-box-arrow-right me-2"></i>
+                                Çıkış Yap
+                            </a>
+                        </li>
+
+                    </ul>
+                </div>
+
+            </div>
+
+        </div>
+    </nav>
+</header>
