@@ -1,7 +1,10 @@
-﻿@model List<UserMessage>
+﻿@using IdentityMail.Web.DTOs.UserMessageDtos
+@model PagedResult<UserMessage>
+
 @{
     ViewData["Title"] = "Gönderilenler";
     Layout = "~/Views/AdminLayout/Layout.cshtml";
+    var filter = (MessageFilterDto)ViewBag.Filter;
 }
 
 <div class="d-flex justify-content-between align-items-center mb-4">
@@ -21,31 +24,159 @@
     </a>
 </div>
 
+
+<!-- ===================================== -->
+<!-- FİLTRE FORMU -->
+<!-- ===================================== -->
+<form method="get" asp-controller="Message" asp-action="SentMail" class="mail-list-card p-3 mb-3">
+    <div class="row g-2">
+
+        <div class="col-md-3">
+            <label class="form-label small text-muted">Alıcı</label>
+            <input type="text" name="SearchTerm" class="form-control"
+                   placeholder="Ad, soyad veya email"
+                   value="@filter.SearchTerm" />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small text-muted">Konu</label>
+            <input type="text" name="Subject" class="form-control"
+                   placeholder="Konu içinde ara"
+                   value="@filter.Subject" />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small text-muted">Başlangıç</label>
+            <input type="date" name="StartDate" class="form-control"
+                   value="@(filter.StartDate?.ToString("yyyy-MM-dd"))" />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small text-muted">Bitiş</label>
+            <input type="date" name="EndDate" class="form-control"
+                   value="@(filter.EndDate?.ToString("yyyy-MM-dd"))" />
+        </div>
+
+        <div class="col-md-2">
+            <label class="form-label small text-muted">Kategori</label>
+            <select name="CategoryId" class="form-select">
+                <option value="">Tümü</option>
+                @foreach (var category in (List<SelectListItem>)ViewBag.Categories)
+                {
+                    <option value="@category.Value" selected="@(filter.CategoryId?.ToString() == category.Value)">
+                        @category.Text
+                    </option>
+                }
+            </select>
+        </div>
+
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary w-100">
+                <i class="bi bi-search"></i>
+            </button>
+        </div>
+
+    </div>
+
+    <div class="row g-2 mt-1 align-items-center">
+
+        <div class="col-auto">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="IsRead" id="readAll" value=""
+                       @(filter.IsRead == null ? "checked" : "") />
+                <label class="form-check-label" for="readAll">Tümü</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="IsRead" id="readTrue" value="true"
+                       @(filter.IsRead == true ? "checked" : "") />
+                <label class="form-check-label" for="readTrue">Okundu</label>
+            </div>
+
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="IsRead" id="readFalse" value="false"
+                       @(filter.IsRead == false ? "checked" : "") />
+                <label class="form-check-label" for="readFalse">Okunmadı</label>
+            </div>
+        </div>
+
+        <div class="col-auto">
+            <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="IsImportant" id="importantOnly" value="true"
+                       @(filter.IsImportant == true ? "checked" : "") />
+                <label class="form-check-label" for="importantOnly">Sadece Önemli</label>
+            </div>
+        </div>
+
+        <div class="col-auto ms-auto">
+            <select name="SortOrder" class="form-select form-select-sm">
+                <option value="desc" selected="@(filter.SortOrder == "desc")">Yeni → Eski</option>
+                <option value="asc" selected="@(filter.SortOrder == "asc")">Eski → Yeni</option>
+            </select>
+        </div>
+
+    </div>
+</form>
+
+
+<!-- ===================================== -->
+<!-- MESAJ LİSTESİ -->
+<!-- ===================================== -->
 <div class="mail-list-card p-3">
 
-    @if (Model.Any())
+    @if (Model.Items.Any())
     {
         <div class="table-responsive">
             <table class="table mail-table align-middle mb-0">
                 <thead>
                     <tr>
-                        <th>Gönderen Ad Soyad</th>
+                        <th>Alıcı Ad Soyad</th>
                         <th class="d-none d-lg-table-cell">Email</th>
                         <th>Konu</th>
+                        <th class="d-none d-lg-table-cell">Kategori</th>
                         <th class="d-none d-md-table-cell">Tarih</th>
+                        <th class="d-none d-md-table-cell">Durum</th>
                         <th class="text-end">İşlemler</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var item in Model)
+                    @foreach (var item in Model.Items)
                     {
                         <tr>
-                            <td class="fw-semibold">@item.Sender.FirstName @item.Sender.LastName</td>
-                            <td class="text-muted d-none d-lg-table-cell">@item.Sender.Email</td>
+                            <td class="fw-semibold">@item.Receiver.FirstName @item.Receiver.LastName</td>
+                            <td class="text-muted d-none d-lg-table-cell">@item.Receiver.Email</td>
                             <td class="text-truncate" style="max-width:260px;">@item.Subject</td>
+
+                            <td class="d-none d-lg-table-cell">
+                                @if (item.Category != null)
+                                {
+                                    <span class="badge bg-light text-dark border">@item.Category.CategoryName</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">-</span>
+                                }
+                            </td>
+
                             <td class="text-muted d-none d-md-table-cell">@item.SendDate.ToString("dd.MM.yyyy HH:mm")</td>
+
+                            <td class="d-none d-md-table-cell">
+                                @if (item.IsRead)
+                                {
+                                    <span class="badge bg-success-subtle text-success">
+                                        <i class="bi bi-check2-all"></i> Okundu
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary-subtle text-secondary">
+                                        <i class="bi bi-check2"></i> Gönderildi
+                                    </span>
+                                }
+                            </td>
+
                             <td class="text-end">
-                                <a href="/Message/MailDetail/@item.Id" class="btn btn-icon" title="Maili Görüntüle">
+                                <a href="/Message/SentMailDetail/@item.Id" class="btn btn-icon" title="Maili Görüntüle">
                                     <i class="bi bi-envelope-open"></i>
                                 </a>
                                 <button onclick="deleteMessage(@item.Id)"
@@ -58,22 +189,83 @@
                 </tbody>
             </table>
         </div>
+
+        <!-- ===================================== -->
+        <!-- SAYFALAMA -->
+        <!-- ===================================== -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3">
+                <ul class="pagination justify-content-center mb-0">
+
+                    <li class="page-item @(Model.HasPrevious ? "" : "disabled")">
+                        <a class="page-link"
+                           asp-action="SentMail"
+                           asp-route-Page="@(Model.Page - 1)"
+                           asp-route-SearchTerm="@filter.SearchTerm"
+                           asp-route-Subject="@filter.Subject"
+                           asp-route-StartDate="@(filter.StartDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-EndDate="@(filter.EndDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-CategoryId="@filter.CategoryId"
+                           asp-route-IsRead="@filter.IsRead"
+                           asp-route-IsImportant="@filter.IsImportant"
+                           asp-route-SortOrder="@filter.SortOrder">
+                            Önceki
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= Model.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == Model.Page ? "active" : "")">
+                            <a class="page-link"
+                               asp-action="SentMail"
+                               asp-route-Page="@i"
+                               asp-route-SearchTerm="@filter.SearchTerm"
+                               asp-route-Subject="@filter.Subject"
+                               asp-route-StartDate="@(filter.StartDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-EndDate="@(filter.EndDate?.ToString("yyyy-MM-dd"))"
+                               asp-route-CategoryId="@filter.CategoryId"
+                               asp-route-IsRead="@filter.IsRead"
+                               asp-route-IsImportant="@filter.IsImportant"
+                               asp-route-SortOrder="@filter.SortOrder">
+                                @i
+                            </a>
+                        </li>
+                    }
+
+                    <li class="page-item @(Model.HasNext ? "" : "disabled")">
+                        <a class="page-link"
+                           asp-action="SentMail"
+                           asp-route-Page="@(Model.Page + 1)"
+                           asp-route-SearchTerm="@filter.SearchTerm"
+                           asp-route-Subject="@filter.Subject"
+                           asp-route-StartDate="@(filter.StartDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-EndDate="@(filter.EndDate?.ToString("yyyy-MM-dd"))"
+                           asp-route-CategoryId="@filter.CategoryId"
+                           asp-route-IsRead="@filter.IsRead"
+                           asp-route-IsImportant="@filter.IsImportant"
+                           asp-route-SortOrder="@filter.SortOrder">
+                            Sonraki
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+        }
     }
     else
     {
         <div class="text-center py-5">
             <i class="bi bi-envelope fs-1 text-secondary"></i>
-            <h4 class="mt-3">Gelen Kutunuz Boş</h4>
-            <p class="text-muted">Henüz size gönderilmiş mesaj bulunmuyor.</p>
+            <h4 class="mt-3">Gönderilen Kutunuz Boş</h4>
+            <p class="text-muted">Filtrelerinize uyan mesaj bulunamadı.</p>
         </div>
     }
-
 </div>
-
 
 <script>
     function deleteMessage(id) {
-         console.log(id);
+        console.log(id);
         Swal.fire({
             title: "Çöp kutusuna taşınsın mı?",
             text: "Mesaj çöp kutusuna taşınacak.",
@@ -84,14 +276,9 @@
             confirmButtonText: "Evet, Taşı",
             cancelButtonText: "İptal"
         }).then((result) => {
-
             if (result.isConfirmed) {
-
                 window.location.href = "/Message/MoveToTrash/" + id;
-
             }
-
         });
-
     }
 </script>

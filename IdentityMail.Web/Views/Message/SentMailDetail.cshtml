@@ -1,0 +1,74 @@
+﻿@model UserMessage
+@{
+    ViewData["Title"] = "Gönderilen Mail";
+    Layout = "~/Views/AdminLayout/Layout.cshtml";
+}
+
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1">Gönderilen Mail İçeriği</h2>
+    
+</div>
+
+
+<div class="mail-card">
+
+    <div class="mail-row">
+        <span class="mail-label">Gönderen</span>
+        <span class="mail-value">
+            @Model.Sender.FirstName @Model.Sender.LastName
+        </span>
+    </div>
+
+
+    <div class="mail-row">
+        <span class="mail-label">E-posta</span>
+        <span class="mail-value">
+            @Model.Sender.Email
+        </span>
+    </div>
+
+
+    <div class="mail-row">
+        <span class="mail-label">Konu</span>
+        <span class="mail-value fw-semibold">
+            @Model.Subject
+        </span>
+    </div>
+     
+    <div class="mail-row">
+        <span class="mail-label">Kategori</span>
+        <span class="mail-value">
+            @(Model.Category?.CategoryName ?? "-")
+        </span>
+    </div>
+
+    <div class="mail-row">
+        <span class="mail-label">Tarih</span>
+        <span class="mail-value">
+            @Model.SendDate.ToString("dd.MM.yyyy HH:mm")
+        </span>
+    </div>
+
+
+    <div class="mail-body-box">
+
+        <div class="mail-label mb-3">
+            Mesaj İçeriği
+        </div>
+
+        <div class="mail-text">
+            @Model.Body
+        </div>
+
+    </div>
+
+
+    <div class="mail-actions">
+        <a href="/Message/SentMail" class="btn btn-dark">
+            <i class="bi bi-arrow-left"></i>
+            Gönderilen Mesajlara Dön
+        </a>
+    </div>
+
+</div>

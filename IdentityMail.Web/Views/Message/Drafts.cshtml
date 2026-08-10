@@ -1,0 +1,111 @@
+﻿@model List<UserMessage>
+
+@{
+    ViewData["Title"] = "Taslaklar";
+    Layout = "~/Views/AdminLayout/Layout.cshtml";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-1">Taslaklar</h2>
+    </div>
+    <a href="/Message/SendMail"
+       class="btn btn-primary d-md-none rounded-circle p-0 d-flex align-items-center justify-content-center"
+       style="width:44px;height:44px;">
+        <i class="bi bi-pencil-square"></i>
+    </a>
+</div>
+
+<div class="mail-list-card p-3">
+    @if (Model.Any())
+    {
+        <div class="table-responsive">
+            <table class="table mail-table align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Alıcı</th>
+                        <th class="d-none d-lg-table-cell">Email</th>
+                        <th>Konu</th>
+                        <th class="d-none d-md-table-cell">Son Düzenleme</th>
+                        <th class="text-end">İşlemler</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model)
+                    {
+                        <tr>
+                            <td class="fw-semibold">
+                                @if (item.Receiver != null)
+                                {
+                                    @($"{item.Receiver.FirstName} {item.Receiver.LastName}")
+                                }
+                                else
+                                {
+                                    <span class="text-muted fst-italic">Alıcı belirtilmemiş</span>
+                                }
+                            </td>
+                            <td class="text-muted d-none d-lg-table-cell">
+                                @(item.Receiver?.Email ?? "-")
+                            </td>
+                            <td class="text-truncate" style="max-width:260px;">
+                                @(string.IsNullOrWhiteSpace(item.Subject) ? "(Konu yok)" : item.Subject)
+                            </td>
+                            <td class="text-muted d-none d-md-table-cell">
+                                @item.SendDate.ToString("dd.MM.yyyy HH:mm")
+                            </td>
+                            <td class="text-end">
+                                <a href="/Message/EditDraft/@item.Id" class="btn btn-icon" title="Düzenle">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+
+                                <form asp-controller="Message"
+                                      asp-action="DeleteDraft"
+                                      asp-route-id="@item.Id"
+                                      method="post"
+                                      class="d-inline delete-draft-form">
+                                    @Html.AntiForgeryToken()
+                                    <button type="button"
+                                            class="btn btn-icon text-danger delete-draft-btn"
+                                            title="Sil">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="bi bi-file-earmark-text fs-1 text-secondary"></i>
+            <h4 class="mt-3">Taslak Kutunuz Boş</h4>
+            <p class="text-muted">Henüz kaydedilmiş bir taslağınız bulunmuyor.</p>
+        </div>
+    }
+</div>
+
+<script>
+    document.querySelectorAll(".delete-draft-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            const form = btn.closest(".delete-draft-form");
+
+            Swal.fire({
+                title: "Taslak silinsin mi?",
+                text: "Bu taslak kalıcı olarak silinecek, geri alınamaz.",
+                icon: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#3085d6",
+                cancelButtonColor: "#d33",
+                confirmButtonText: "Evet, Sil",
+                cancelButtonText: "İptal"
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+        });
+    });
+</script>

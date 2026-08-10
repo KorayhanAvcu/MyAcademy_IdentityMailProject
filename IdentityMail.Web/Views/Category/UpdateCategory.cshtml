@@ -1,0 +1,37 @@
+﻿@model UpdateCategoryDto
+@{
+    ViewData["Title"] = "UpdateCategory";
+    Layout = "~/Views/AdminLayout/Layout.cshtml";
+}
+
+<div class="mb-4">
+    <h2 class="fw-bold mb-1">Kategori Güncelle</h2>
+
+</div>
+<form method="post" class="compose-card">
+    <input type="hidden" asp-for="Id"/>
+    <div class="p-3">
+
+        <!-- Kategori -->
+        <div class="compose-field">
+            <label class="compose-label" asp-for="CategoryName">Kategori</label>
+            <input type="text" class="compose-input" asp-for="CategoryName" placeholder="Kategori Giriniz..." required />
+        </div>
+        <span class="text-danger small" asp-validation-for="CategoryName"></span>
+
+
+
+    </div>
+
+    <div class="compose-toolbar">
+        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+        <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 ms-auto">
+            <span>Güncelle</span>
+
+        </button>
+    </div>
+
+</form>
+
+
+

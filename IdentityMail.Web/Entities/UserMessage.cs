@@ -9,10 +9,13 @@
         public bool IsRead {  get; set; }
         public bool IsImportant {  get; set; }
         public bool IsDelete { get; set; }
+        public bool? IsDraft { get; set; }
         public AppUser Sender { get; set; }
         public int SenderId { get; set; }
-        public AppUser Receiver { get; set; }
-        public int ReceiverId { get; set; }
+        public AppUser? Receiver { get; set; }
+        public int? ReceiverId { get; set; }
+        public Category? Category { get; set; } = null!;
+        public int? CategoryId { get; set; }
 
     }
 }

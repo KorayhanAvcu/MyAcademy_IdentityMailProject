@@ -1,42 +1,88 @@
 ﻿@model SendMailDto
+
 @{
     ViewData["Title"] = "Yeni Mail Gönder";
     Layout = "~/Views/AdminLayout/Layout.cshtml";
 }
 
-<div class="mb-4">
-    <h2 class="fw-bold mb-1">Yeni Mail Gönder</h2>
-    <p class="text-muted mb-0">Alıcıya göndermek istediğiniz mesajı oluşturun</p>
+<div class="mb-4 d-flex justify-content-between align-items-center">
+    <div>
+        <h2 class="fw-bold mb-1">Yeni Mail Gönder</h2>
+        <p class="text-muted mb-0">Alıcıya göndermek istediğiniz mesajı oluşturun</p>
+    </div>
+
+    <!-- Gmail tarzı otomatik kayıt göstergesi -->
+    <small id="autosaveStatus" class="text-muted fst-italic"></small>
 </div>
 
-<form method="post" class="compose-card">
+<form asp-controller="Message"
+      asp-action="SendMail"
+      method="post"
+      id="sendMailForm"
+      class="compose-card">
+
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="Id" id="draftId" />
 
     <div class="p-3">
 
         <!-- Alıcı -->
         <div class="compose-field">
             <label class="compose-label" asp-for="ReceiverMail">Kime</label>
-            <input type="email" class="compose-input" asp-for="ReceiverMail" placeholder="E-posta adresi girin..." required />
+            <input type="email"
+                   class="compose-input"
+                   asp-for="ReceiverMail"
+                   id="receiverMail"
+                   placeholder="E-posta adresi girin..."
+                   autocomplete="off"
+                   required />
         </div>
         <span class="text-danger small" asp-validation-for="ReceiverMail"></span>
+
+        <!-- Alıcı doğrulama geri bildirimi -->
+        <small id="receiverFeedback" class="d-block mt-1"></small>
 
         <!-- Konu -->
         <div class="compose-field">
             <label class="compose-label" asp-for="Subject">Konu</label>
-            <input type="text" class="compose-input" asp-for="Subject" placeholder="Mesajınızın konusu" required />
+            <input type="text"
+                   class="compose-input"
+                   asp-for="Subject"
+                   id="subject"
+                   placeholder="Mesajınızın konusu"
+                   required />
         </div>
         <span class="text-danger small" asp-validation-for="Subject"></span>
 
+        <!-- Kategori -->
+        <div class="compose-field">
+            <label asp-for="CategoryId" class="compose-label">Kategori</label>
+            <select asp-for="CategoryId"
+                    asp-items="ViewBag.Categories"
+                    class="compose-input"
+                    id="categoryId">
+                <option value="">Kategori Seçiniz</option>
+            </select>
+        </div>
+        <span class="text-danger small" asp-validation-for="CategoryId"></span>
+
         <!-- Mesaj -->
         <div class="pt-2">
-            <textarea rows="10" class="compose-textarea" asp-for="Body" placeholder="Mesajınızı buraya yazın..." required></textarea>
+            <textarea rows="10"
+                      class="compose-textarea"
+                      asp-for="Body"
+                      id="body"
+                      placeholder="Mesajınızı buraya yazın..."
+                      required></textarea>
         </div>
         <span class="text-danger small" asp-validation-for="Body"></span>
 
+        <div asp-validation-summary="ModelOnly" class="text-danger small mt-2"></div>
+
     </div>
 
+    <!-- Toolbar -->
     <div class="compose-toolbar">
-        <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
         <button type="submit" class="btn btn-primary d-flex align-items-center gap-2 ms-auto">
             <span>Gönder</span>
             <i class="bi bi-send"></i>
@@ -45,3 +91,174 @@
 
 </form>
 
+<style>
+    #receiverFeedback.valid {
+        color: #198754;
+    }
+
+    #receiverFeedback.invalid {
+        color: #dc3545;
+    }
+
+    #receiverFeedback.checking {
+        color: #6c757d;
+    }
+</style>
+
+<script>
+    (function () {
+        const form = document.getElementById("sendMailForm");
+        const draftIdInput = document.getElementById("draftId");
+        const statusEl = document.getElementById("autosaveStatus");
+        const receiverMailInput = document.getElementById("receiverMail");
+        const receiverFeedback = document.getElementById("receiverFeedback");
+
+        const fields = ["receiverMail", "subject", "categoryId", "body"]
+            .map(id => document.getElementById(id));
+
+        let debounceTimer = null;
+        let receiverCheckTimer = null;
+        let isSaving = false;
+        let hasUnsavedChanges = false;
+
+        function isFormEmpty() {
+            return fields.every(f => !f.value || !f.value.trim());
+        }
+
+        function setStatus(text) {
+            statusEl.innerText = text;
+        }
+
+        function setReceiverFeedback(text, cssClass) {
+            receiverFeedback.innerText = text;
+            receiverFeedback.className = "d-block mt-1 " + cssClass;
+        }
+
+        // =========================
+        // TASLAK KAYDETME (genel)
+        // =========================
+        async function saveDraft() {
+            if (isFormEmpty()) return;
+            if (isSaving) {
+                hasUnsavedChanges = true;
+                return;
+            }
+
+            isSaving = true;
+            setStatus("Kaydediliyor...");
+
+            const formData = new FormData(form);
+
+            try {
+                const response = await fetch('@Url.Action("SaveDraft", "Message")', {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (!response.ok) throw new Error("Taslak kaydedilemedi.");
+
+                const result = await response.json();
+
+                if (result.success) {
+                    draftIdInput.value = result.id;
+                    const now = new Date();
+                    const timeStr = now.toLocaleTimeString("tr-TR", { hour: "2-digit", minute: "2-digit" });
+                    setStatus(`Taslak olarak kaydedildi · ${timeStr}`);
+                } else {
+                    setStatus("Taslak kaydedilemedi");
+                }
+            } catch (error) {
+                console.error(error);
+                setStatus("Bağlantı hatası, tekrar denenecek");
+            } finally {
+                isSaving = false;
+
+                // Kayıt sırasında yeni değişiklik yapıldıysa tekrar kaydet
+                if (hasUnsavedChanges) {
+                    hasUnsavedChanges = false;
+                    scheduleAutosave();
+                }
+            }
+        }
+
+        function scheduleAutosave() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(saveDraft, 1200); // yazmayı bıraktıktan 1.2sn sonra kaydet
+        }
+
+        // =========================
+        // ALICI EMAIL DOĞRULAMA
+        // =========================
+        async function checkReceiverEmail() {
+            const email = receiverMailInput.value.trim();
+
+            if (!email) {
+                setReceiverFeedback("", "");
+                return;
+            }
+
+            // Basit format kontrolü - geçersiz formatta API'ye gitmeye gerek yok
+            const emailPattern = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
+            if (!emailPattern.test(email)) {
+                setReceiverFeedback("", "");
+                return;
+            }
+
+            setReceiverFeedback("Kontrol ediliyor...", "checking");
+
+            try {
+                const response = await fetch(
+                    '@Url.Action("CheckReceiver", "Message")?email=' + encodeURIComponent(email)
+                );
+
+                if (!response.ok) throw new Error("Doğrulama başarısız.");
+
+                const result = await response.json();
+
+               
+                if (result.exists) {
+                    setReceiverFeedback(`✓ kayıtlı kullanıcı`, "valid");
+
+                    // Kayıtlı ve geçerli bir alıcı bulununca hemen taslağa kaydet
+                    clearTimeout(debounceTimer);
+                    saveDraft();
+                } else {
+                    setReceiverFeedback("Bu e-posta ile kayıtlı kullanıcı bulunamadı", "invalid");
+                }
+            } catch (error) {
+                console.error(error);
+                setReceiverFeedback("", "");
+            }
+        }
+
+        // Alıcı alanı için ayrı, daha kısa debounce (600ms)
+        receiverMailInput.addEventListener("input", function () {
+            clearTimeout(receiverCheckTimer);
+            receiverCheckTimer = setTimeout(checkReceiverEmail, 600);
+        });
+
+        // Diğer alanlar genel debounce ile devam eder (1200ms)
+        fields.forEach(field => {
+            if (field === receiverMailInput) return; // alıcı zaten kendi mantığında
+
+            const eventName = field.tagName === "SELECT" ? "change" : "input";
+            field.addEventListener(eventName, scheduleAutosave);
+        });
+
+        // Sayfadan ayrılırken bekleyen değişiklik varsa son kez kaydet
+        window.addEventListener("beforeunload", function () {
+            if ((debounceTimer || receiverCheckTimer) && !isFormEmpty()) {
+                navigator.sendBeacon(
+                    '@Url.Action("SaveDraft", "Message")',
+                    new FormData(form)
+                );
+            }
+        });
+
+        // Form gönderildiğinde autosave'i iptal et (çakışmasın diye)
+        form.addEventListener("submit", function () {
+            clearTimeout(debounceTimer);
+            clearTimeout(receiverCheckTimer);
+        });
+    })();
+</script>

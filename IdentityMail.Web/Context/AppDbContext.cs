@@ -21,9 +21,17 @@ namespace IdentityMail.Web.Context
                                      .WithOne(s => s.Receiver)
                                      .HasForeignKey(x => x.ReceiverId)
                                      .OnDelete(DeleteBehavior.Restrict);
+
+            builder.Entity<Category>()
+                                    .HasOne(c => c.User)
+                                    .WithMany()
+                                    .HasForeignKey(c => c.UserId)
+                                    .IsRequired(false)
+                                    .OnDelete(DeleteBehavior.SetNull);
             base.OnModelCreating(builder);
 
         }
         public DbSet<UserMessage> UserMessages { get; set; }
+        public DbSet<Category> Categories { get; set; }
     }
 }

@@ -42,9 +42,7 @@
                             <div class="fw-semibold" style="font-size:13px;">
                                 @Model?.FirstName @Model?.LastName
                             </div>
-                            <small class="text-muted" style="font-size:11px;">
-                                Kullanıcı
-                            </small>
+                            
                         </div>
                     </a>
 
@@ -57,6 +55,14 @@
                                asp-action="Edit">
                                 <i class="bi bi-person me-2"></i>
                                 Profil
+                            </a>
+                        </li>
+                        <li>
+                            <a class="dropdown-item"
+                               asp-controller="Auth"
+                               asp-action="ChangePassword">
+                                <i class="bi bi-person me-2"></i>
+                                Şifre Güncelleme
                             </a>
                         </li>
 
