@@ -14,7 +14,7 @@ namespace IdentityMail.Web.Controllers
         IEmailService _emailService) : Controller
     {
         // =====================================================
-        // REGISTER
+        // REGISTER - GET
         // =====================================================
 
         [HttpGet]
@@ -23,7 +23,13 @@ namespace IdentityMail.Web.Controllers
             return View();
         }
 
+
+        // =====================================================
+        // REGISTER - POST
+        // =====================================================
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Register(
             RegisterDto registerDto)
         {
@@ -41,18 +47,26 @@ namespace IdentityMail.Web.Controllers
                 return View(registerDto);
             }
 
+
+            // =================================================
+            // USER OLUŞTUR
+            // =================================================
+
             var user = new AppUser
             {
                 Email = registerDto.Email,
                 FirstName = registerDto.FirstName,
                 LastName = registerDto.LastName,
                 UserName = registerDto.UserName,
+
                 IsActive = true
             };
+
 
             var result = await _userManager.CreateAsync(
                 user,
                 registerDto.Password);
+
 
             if (!result.Succeeded)
             {
@@ -66,9 +80,15 @@ namespace IdentityMail.Web.Controllers
                 return View(registerDto);
             }
 
+
+            // =================================================
+            // USER ROLE
+            // =================================================
+
             var roleResult = await _userManager.AddToRoleAsync(
                 user,
                 Roles.User);
+
 
             if (!roleResult.Succeeded)
             {
@@ -82,11 +102,146 @@ namespace IdentityMail.Web.Controllers
                 return View(registerDto);
             }
 
-            return RedirectToAction("Login");
+
+            // =================================================
+            // EMAIL CONFIRMATION TOKEN
+            // =================================================
+
+            var token =
+                await _userManager.GenerateEmailConfirmationTokenAsync(
+                    user);
+
+
+            // =================================================
+            // CONFIRMATION LINK
+            // =================================================
+
+            var confirmationLink = Url.Action(
+                "ConfirmEmail",
+                "Auth",
+                new
+                {
+                    userId = user.Id,
+                    token = token
+                },
+                Request.Scheme);
+
+
+            // =================================================
+            // EMAIL BODY
+            // =================================================
+
+            var emailBody =
+                "<h2>Identity Mail</h2>" +
+
+                "<p>Merhaba " +
+                user.FirstName +
+                ",</p>" +
+
+                "<p>" +
+                "Identity Mail hesabınızı oluşturduğunuz için " +
+                "teşekkür ederiz." +
+                "</p>" +
+
+                "<p>" +
+                "Hesabınızı kullanabilmek için email adresinizi " +
+                "doğrulamanız gerekiyor." +
+                "</p>" +
+
+                "<p>" +
+
+                "<a href=\"" +
+                confirmationLink +
+                "\"" +
+
+                " style=\"" +
+                "display:inline-block;" +
+                "padding:12px 20px;" +
+                "background-color:#0d6efd;" +
+                "color:white;" +
+                "text-decoration:none;" +
+                "border-radius:6px;" +
+                "\">" +
+
+                "Email Adresimi Doğrula" +
+
+                "</a>" +
+
+                "</p>" +
+
+                "<p>" +
+                "Bu bağlantıya tıklayarak email adresinizi " +
+                "doğrulayabilirsiniz." +
+                "</p>" +
+
+                "<p>" +
+                "Eğer bu hesabı siz oluşturmadıysanız " +
+                "bu emaili dikkate almayabilirsiniz." +
+                "</p>" +
+
+                "<p>Identity Mail</p>";
+
+
+            // =================================================
+            // EMAIL GÖNDER
+            // =================================================
+
+            await _emailService.SendEmailAsync(
+                user.Email!,
+                "Identity Mail - Email Doğrulama",
+                emailBody);
+
+
+            // Kullanıcıya direkt login yaptırmıyoruz.
+            // Önce emailini doğrulaması gerekiyor.
+            return RedirectToAction("EmailConfirmationPending");
+        }
+        [HttpGet]
+        public IActionResult EmailConfirmationPending()
+        {
+            return View();
         }
 
         // =====================================================
-        // LOGIN
+        // CONFIRM EMAIL
+        // =====================================================
+
+        [HttpGet]
+        public async Task<IActionResult> ConfirmEmail(
+            int userId,
+            string token)
+        {
+            // Kullanıcıyı bul
+            var user = await _userManager.FindByIdAsync(
+                userId.ToString());
+
+
+            if (user == null)
+            {
+                return RedirectToAction("Login");
+            }
+
+
+            // Identity tokenı kontrol eder.
+            var result =
+                await _userManager.ConfirmEmailAsync(
+                    user,
+                    token);
+
+
+            if (!result.Succeeded)
+            {
+                return View("EmailConfirmationFailed");
+            }
+
+
+            // Burada EmailConfirmed artık true olur.
+            return View("EmailConfirmed");
+        }
+
+
+        // =====================================================
+        // LOGIN - GET
         // =====================================================
 
         [HttpGet]
@@ -95,7 +250,13 @@ namespace IdentityMail.Web.Controllers
             return View();
         }
 
+
+        // =====================================================
+        // LOGIN - POST
+        // =====================================================
+
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<IActionResult> Login(
             LoginDto loginDto)
         {
@@ -104,23 +265,58 @@ namespace IdentityMail.Web.Controllers
                 return View(loginDto);
             }
 
+
+            // =================================================
+            // USER BUL
+            // =================================================
+
             var user = await _userManager.FindByEmailAsync(
                 loginDto.Email);
+
 
             if (user == null)
             {
                 ModelState.AddModelError(
                     string.Empty,
-                    "Bu email sistemde kayıtlı değil.");
+                    "Email veya şifre hatalı.");
 
                 return View(loginDto);
             }
 
-            var result = await _signInManager.PasswordSignInAsync(
-                user,
-                loginDto.Password,
-                false,
-                false);
+
+            // =================================================
+            // IS ACTIVE KONTROLÜ
+            // =================================================
+
+            if (!user.IsActive)
+            {
+                ModelState.AddModelError(
+                    string.Empty,
+                    "Hesabınız pasif durumdadır.");
+
+                return View(loginDto);
+            }
+
+
+            // =================================================
+            // LOGIN
+            // =================================================
+
+            // EmailConfirmed kontrolünü Identity kendisi yapacak.
+            //
+            // Çünkü Program.cs içerisinde:
+            //
+            // options.SignIn.RequireConfirmedEmail = true;
+            //
+            // olarak ayarladık.
+
+            var result =
+                await _signInManager.PasswordSignInAsync(
+                    user,
+                    loginDto.Password,
+                    false,
+                    false);
+
 
             if (!result.Succeeded)
             {
@@ -131,8 +327,27 @@ namespace IdentityMail.Web.Controllers
                 return View(loginDto);
             }
 
-            return RedirectToAction("Index", "Message");
+
+            var roles = await _userManager.GetRolesAsync(user);
+            if (roles.Contains(Roles.Admin))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+
+            if (roles.Contains(Roles.User))
+            {
+                return RedirectToAction("Index", "Message");
+            }
+
+            await _signInManager.SignOutAsync();
+
+            ModelState.AddModelError(
+                string.Empty,
+                "Kullanıcınıza atanmış geçerli bir rol bulunamadı.");
+
+            return View(loginDto);
         }
+
 
         // =====================================================
         // LOGOUT
@@ -146,6 +361,7 @@ namespace IdentityMail.Web.Controllers
             return RedirectToAction("Login");
         }
 
+
         // =====================================================
         // FORGOT PASSWORD - GET
         // =====================================================
@@ -155,6 +371,7 @@ namespace IdentityMail.Web.Controllers
         {
             return View();
         }
+
 
         // =====================================================
         // FORGOT PASSWORD - POST
@@ -173,20 +390,18 @@ namespace IdentityMail.Web.Controllers
             var user = await _userManager.FindByEmailAsync(
                 model.Email);
 
-            // Güvenlik nedeniyle kullanıcı bulunamadığında
-            // yine confirmation sayfasına gönderiyoruz.
             if (user == null)
             {
                 return RedirectToAction(
                     "ForgotPasswordConfirmation");
             }
 
-            // Identity password reset token oluşturur.
+
             var token =
                 await _userManager.GeneratePasswordResetTokenAsync(
                     user);
 
-            // Token'ı doğrudan URL parametresi olarak gönderiyoruz.
+
             var resetLink = Url.Action(
                 "ResetPassword",
                 "Auth",
@@ -196,6 +411,7 @@ namespace IdentityMail.Web.Controllers
                     token = token
                 },
                 Request.Scheme);
+
 
             var emailBody =
                 "<h2>Identity Mail</h2>" +
@@ -211,9 +427,9 @@ namespace IdentityMail.Web.Controllers
 
                 "<a href=\"" +
                 resetLink +
-                "\" " +
+                "\"" +
 
-                "style=\"" +
+                " style=\"" +
                 "display:inline-block;" +
                 "padding:10px 20px;" +
                 "background-color:#0d6efd;" +
@@ -229,27 +445,23 @@ namespace IdentityMail.Web.Controllers
                 "</p>" +
 
                 "<p>" +
-                "Bu bağlantı şifrenizi sıfırlamak için " +
-                "kullanılacaktır." +
-                "</p>" +
-
-                "<p>" +
                 "Eğer bu işlemi siz başlatmadıysanız, " +
                 "bu maili dikkate almayabilirsiniz." +
                 "</p>" +
 
-                "<p>" +
-                "Identity Mail" +
-                "</p>";
+                "<p>Identity Mail</p>";
+
 
             await _emailService.SendEmailAsync(
                 user.Email!,
                 "Identity Mail - Şifre Sıfırlama",
                 emailBody);
 
+
             return RedirectToAction(
                 "ForgotPasswordConfirmation");
         }
+
 
         // =====================================================
         // FORGOT PASSWORD CONFIRMATION
@@ -260,6 +472,7 @@ namespace IdentityMail.Web.Controllers
         {
             return View();
         }
+
 
         // =====================================================
         // RESET PASSWORD - GET
@@ -276,14 +489,17 @@ namespace IdentityMail.Web.Controllers
                 return RedirectToAction("Login");
             }
 
+
             var model = new ResetPasswordDto
             {
                 UserId = userId,
                 Token = token
             };
 
+
             return View(model);
         }
+
 
         // =====================================================
         // RESET PASSWORD - POST
@@ -299,8 +515,10 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
+
             var user = await _userManager.FindByIdAsync(
                 model.UserId);
+
 
             if (user == null)
             {
@@ -311,11 +529,13 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
+
             var result =
                 await _userManager.ResetPasswordAsync(
                     user,
                     model.Token,
                     model.NewPassword);
+
 
             if (!result.Succeeded)
             {
@@ -329,11 +549,13 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
+
             return RedirectToAction("Login");
         }
 
+
         // =====================================================
-        // CHANGE PASSWORD
+        // CHANGE PASSWORD - GET
         // =====================================================
 
         [Authorize]
@@ -343,6 +565,12 @@ namespace IdentityMail.Web.Controllers
             return View();
         }
 
+
+        // =====================================================
+        // CHANGE PASSWORD - POST
+        // =====================================================
+
+        [Authorize]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ChangePassword(
@@ -353,18 +581,22 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
+
             var user = await _userManager.GetUserAsync(User);
+
 
             if (user == null)
             {
                 return RedirectToAction("Login");
             }
 
+
             var result =
                 await _userManager.ChangePasswordAsync(
                     user,
                     model.CurrentPassword,
                     model.NewPassword);
+
 
             if (!result.Succeeded)
             {
@@ -378,7 +610,9 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
+
             await _signInManager.RefreshSignInAsync(user);
+
 
             return RedirectToAction(
                 "Index",
@@ -386,4 +620,3 @@ namespace IdentityMail.Web.Controllers
         }
     }
 }
-
