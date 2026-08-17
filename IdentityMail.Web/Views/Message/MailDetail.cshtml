@@ -5,47 +5,52 @@
     Layout = "~/Views/AdminLayout/Layout.cshtml";
 }
 
-
 <div class="mb-4">
     <h2 class="fw-bold mb-1">Gelen Mail İçeriği</h2>
-    <p class="text-muted mb-0">Gönderilen mesajın detaylarını görüntüleyin</p>
+    <p class="text-muted mb-0">
+        Gönderilen mesajın detaylarını görüntüleyin
+    </p>
 </div>
-
 
 <div class="mail-card">
 
+    <!-- GÖNDEREN -->
     <div class="mail-row">
         <span class="mail-label">Gönderen</span>
+
         <span class="mail-value">
             @Model.Sender.FirstName @Model.Sender.LastName
         </span>
     </div>
 
-
+    <!-- E-POSTA -->
     <div class="mail-row">
         <span class="mail-label">E-posta</span>
+
         <span class="mail-value">
             @Model.Sender.Email
         </span>
     </div>
 
-
+    <!-- KONU -->
     <div class="mail-row">
         <span class="mail-label">Konu</span>
+
         <span class="mail-value fw-semibold">
             @Model.Subject
         </span>
     </div>
 
-
+    <!-- TARİH -->
     <div class="mail-row">
         <span class="mail-label">Tarih</span>
+
         <span class="mail-value">
             @Model.SendDate.ToString("dd.MM.yyyy HH:mm")
         </span>
     </div>
 
-
+    <!-- MESAJ -->
     <div class="mail-body-box">
 
         <div class="mail-label mb-3">
@@ -58,14 +63,26 @@
 
     </div>
 
+    <!-- BUTONLAR -->
+    <div class="mail-actions d-flex gap-2">
 
-    <div class="mail-actions">
+        <!-- Geri -->
         <a href="/Message/Index" class="btn btn-dark">
             <i class="bi bi-arrow-left"></i>
             Gelen Mesajlara Dön
         </a>
+
+        <!-- Yanıtla -->
+        <a asp-controller="Message"
+           asp-action="Reply"
+           asp-route-id="@Model.Id"
+           class="btn btn-primary">
+
+            <i class="bi bi-reply"></i>
+            Yanıtla
+
+        </a>
+
     </div>
 
 </div>
-
-

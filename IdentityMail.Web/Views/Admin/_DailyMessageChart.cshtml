@@ -1,0 +1,38 @@
+﻿@model List<IdentityMail.Web.DTOs.AdminDtos.DailyMessageDto>
+
+@{
+    var maxCount = Model.Any()
+        ? Model.Max(x => x.Count)
+        : 0;
+}
+
+<div class="chart-container">
+
+    @foreach (var item in Model)
+    {
+        var height = maxCount > 0
+        ? (item.Count * 100.0 / maxCount)
+        : 0;
+
+        <div class="chart-bar"
+             style="height: @height.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+
+            <span class="chart-value">
+                @item.Count
+            </span>
+
+        </div>
+    }
+
+</div>
+
+<div class="chart-days d-flex justify-content-between">
+
+    @foreach (var item in Model)
+    {
+        <span>
+            @item.Label
+        </span>
+    }
+
+</div>

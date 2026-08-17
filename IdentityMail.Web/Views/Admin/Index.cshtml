@@ -1,8 +1,868 @@
-﻿
+﻿@model IdentityMail.Web.DTOs.AdminDtos.DashboardDto
+
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Yönetici Paneli";
     Layout = "~/Views/AdminLayout/Layout.cshtml";
+
+    var activeUserPercentage = Model.TotalUserCount > 0
+        ? (decimal)Model.ActiveUserCount / Model.TotalUserCount * 100
+        : 0;
+
+    var unreadPercentage = Model.TotalMessageCount > 0
+        ? (decimal)Model.UnreadMessageCount / Model.TotalMessageCount * 100
+        : 0;
+
+    var categoryColors = new[]
+    {
+        "#0648a8",
+        "#0b57d0",
+        "#6ea8fe",
+        "#b8dff5",
+        "#86a8d5"
+    };
+
+    var categoryGradientParts = new List<string>();
+    decimal currentDegree = 0;
+
+    if (Model.Categories != null && Model.Categories.Any())
+    {
+        foreach (var category in Model.Categories)
+        {
+            var degree = category.Percentage * 3.6m;
+
+            var startDegree = currentDegree;
+            var endDegree = currentDegree + degree;
+
+            var color = categoryColors[
+                Model.Categories.IndexOf(category) % categoryColors.Length
+            ];
+
+            categoryGradientParts.Add(
+                $"{color} {startDegree:0.##}deg {endDegree:0.##}deg"
+            );
+
+            currentDegree = endDegree;
+        }
+    }
+
+    var categoryGradient = categoryGradientParts.Any()
+        ? string.Join(", ", categoryGradientParts)
+        : "#e9ecef 0deg 360deg";
 }
 
-<h1>Index</h1>
+<style>
 
+    .dashboard-bg {
+        background-color: #f7f9fd;
+        min-height: 100vh;
+    }
+
+    .dashboard-card {
+        background: #fff;
+        border: 1px solid #edf0f5;
+        border-radius: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+    }
+
+    .stat-card {
+        min-height: 145px;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .stat-icon {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+
+    .stat-title {
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: .08em;
+        color: #737785;
+        text-transform: uppercase;
+    }
+
+    .stat-number {
+        font-size: 26px;
+        font-weight: 600;
+        color: #181c1f;
+    }
+
+    .dashboard-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: #181c1f;
+    }
+
+    .dashboard-subtitle {
+        font-size: 15px;
+        color: #737785;
+    }
+
+    /* ============================= */
+    /* GÜNLÜK MESAJ GRAFİĞİ */
+    /* ============================= */
+
+    .chart-container {
+        height: 250px;
+        display: flex;
+        align-items: end;
+        gap: 10px;
+        padding-top: 30px;
+    }
+
+    .chart-bar {
+        flex: 1;
+        min-height: 5px;
+        border-radius: 5px 5px 0 0;
+        background-color: #c9d8ed;
+        transition: .2s;
+        position: relative;
+    }
+
+        .chart-bar:hover {
+            background-color: #86a8d5;
+        }
+
+        .chart-bar.active {
+            background-color: #0648a8;
+        }
+
+    .chart-value {
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        font-size: 11px;
+        color: #fff;
+        background: #2d3134;
+        padding: 3px 7px;
+        border-radius: 4px;
+        opacity: 0;
+        transition: .2s;
+        white-space: nowrap;
+    }
+
+    .chart-bar:hover .chart-value {
+        opacity: 1;
+    }
+
+    .chart-days {
+        border-top: 1px solid #e0e3e6;
+        padding-top: 8px;
+        font-size: 11px;
+        color: #737785;
+    }
+
+    /* ============================= */
+    /* KATEGORİ GRAFİĞİ */
+    /* ============================= */
+
+    .category-chart {
+        width: 180px;
+        height: 180px;
+        border-radius: 50%;
+        background: conic-gradient( @categoryGradient );
+        position: relative;
+        margin: 0 auto;
+    }
+
+        .category-chart::after {
+            content: "";
+            position: absolute;
+            width: 105px;
+            height: 105px;
+            background: #fff;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+    .category-chart-text {
+        position: absolute;
+        z-index: 2;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .category-percent {
+        font-size: 22px;
+        font-weight: 600;
+    }
+
+    .category-label {
+        font-size: 11px;
+        color: #737785;
+    }
+
+    .legend-dot {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        display: inline-block;
+    }
+
+    /* ============================= */
+    /* KULLANICI */
+    /* ============================= */
+
+    .user-row {
+        padding: 15px 20px;
+        border-top: 1px solid #edf0f5;
+        transition: background .2s;
+    }
+
+        .user-row:hover {
+            background-color: #f7f9fd;
+        }
+
+    .user-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+
+    .avatar-initial {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #a83b00;
+        color: white;
+        font-weight: 500;
+    }
+
+    .user-name {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 2px;
+    }
+
+    .user-email {
+        font-size: 11px;
+        color: #737785;
+    }
+
+    .sent-label {
+        font-size: 11px;
+        color: #737785;
+    }
+
+    .sent-count {
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+    .progress-thin {
+        height: 6px;
+    }
+
+    @@media (max-width: 768px) {
+
+        .dashboard-title {
+            font-size: 20px;
+        }
+
+        .dashboard-subtitle {
+            font-size: 13px;
+        }
+
+        .chart-container {
+            height: 200px;
+        }
+
+        .category-chart {
+            width: 160px;
+            height: 160px;
+        }
+    }
+
+</style>
+
+
+<div class="dashboard-bg">
+
+    <div class="container-fluid py-4 px-3 px-lg-4">
+
+        <!-- ====================================== -->
+        <!-- BAŞLIK -->
+        <!-- ====================================== -->
+
+        <div class="d-flex justify-content-between align-items-center mb-4">
+
+            <div>
+
+                <h1 class="dashboard-title mb-1">
+                    Yönetici Paneli
+                </h1>
+
+                <p class="dashboard-subtitle mb-0">
+                    Sistem genel bakışı ve istatistikler
+                </p>
+
+            </div>
+
+
+        </div>
+
+
+        <!-- ====================================== -->
+        <!-- İSTATİSTİK KARTLARI -->
+        <!-- ====================================== -->
+
+        <div class="row g-3 mb-4">
+
+            <!-- KULLANICILAR -->
+
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="dashboard-card stat-card p-4 h-100">
+
+                    <div class="d-flex justify-content-between align-items-start">
+
+                        <div>
+
+                            <div class="stat-title">
+                                Kullanıcılar
+                            </div>
+
+                            <div class="stat-number mt-1">
+                                @Model.TotalUserCount.ToString("N0")
+                            </div>
+
+                        </div>
+
+                        <div class="stat-icon bg-info bg-opacity-25 text-info">
+
+                            <span class="material-symbols-outlined">
+                                group
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mt-4">
+
+                        <span class="badge bg-primary-subtle text-primary rounded-pill">
+
+                            ✓ @Model.ActiveUserCount.ToString("N0") Aktif
+
+                        </span>
+
+                        <small class="text-secondary">
+
+                            %@activeUserPercentage.ToString("0") Oran
+
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- MESAJ HACMİ -->
+
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="dashboard-card stat-card p-4 h-100">
+
+                    <div class="d-flex justify-content-between align-items-start">
+
+                        <div>
+
+                            <div class="stat-title">
+                                Mesaj Hacmi
+                            </div>
+
+                            <div class="stat-number mt-1">
+                                @Model.TotalMessageCount.ToString("N0")
+                            </div>
+
+                        </div>
+
+                        <div class="stat-icon bg-warning bg-opacity-25 text-warning">
+
+                            <span class="material-symbols-outlined">
+                                stacked_email
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="mt-4">
+
+                        <span class="badge bg-warning-subtle text-warning rounded-pill">
+
+                            ↑ @Model.TodayMessageCount.ToString("N0") Bugün
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- OKUNMAMIŞ -->
+
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="dashboard-card stat-card p-4 h-100">
+
+                    <div class="d-flex justify-content-between align-items-start">
+
+                        <div>
+
+                            <div class="stat-title">
+                                Okunmamış
+                            </div>
+
+                            <div class="stat-number mt-1">
+                                @Model.UnreadMessageCount.ToString("N0")
+                            </div>
+
+                        </div>
+
+                        <div class="stat-icon bg-danger bg-opacity-10 text-danger">
+
+                            <span class="material-symbols-outlined">
+                                mark_email_unread
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                    <div class="d-flex align-items-center gap-2 mt-4">
+
+                        <div class="progress progress-thin flex-grow-1">
+
+                            <div class="progress-bar bg-danger"
+                                 style="width: @unreadPercentage.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)%">
+                            </div>
+
+                        </div>
+
+                        <small class="text-secondary text-nowrap">
+
+                            %@unreadPercentage.ToString("0")%
+
+                        </small>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ÇÖP KUTUSU -->
+
+            <div class="col-12 col-md-6 col-xl-3">
+
+                <div class="dashboard-card stat-card p-4 h-100">
+
+                    <div class="d-flex justify-content-between align-items-start">
+
+                        <div>
+
+                            <div class="stat-title">
+                                Çöp Kutusu
+                            </div>
+
+                            <div class="stat-number mt-1">
+                                @Model.DeletedMessageCount.ToString("N0")
+                            </div>
+
+                        </div>
+
+                        <div class="stat-icon bg-secondary bg-opacity-10 text-secondary">
+
+                            <span class="material-symbols-outlined">
+                                delete
+                            </span>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ====================================== -->
+        <!-- GRAFİKLER -->
+        <!-- ====================================== -->
+
+        <div class="row g-4 mb-4">
+
+
+            <!-- GÜNLÜK MESAJ AKTİVİTESİ -->
+
+            <div class="col-12 col-lg-8">
+
+                <div class="dashboard-card p-4 h-100">
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+
+                        <h5 class="mb-0 fw-medium">
+                            Günlük Mesaj Aktivitesi
+                        </h5>
+
+                        <select id="messageChartFilter"
+                                class="form-select form-select-sm w-auto border-0 bg-light">
+
+                            <option value="Last7Days">
+                                Son 7 Gün
+                            </option>
+
+                            <option value="ThisMonth">
+                                Bu Ay
+                            </option>
+
+                            <option value="ThisYear">
+                                Bu Yıl
+                            </option>
+
+                        </select>
+
+                    </div>
+
+                    <div id="messageChart">
+
+                        @await Html.PartialAsync(
+                        "_DailyMessageChart",Model.DailyMessages)
+
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- ====================================== -->
+            <!-- KATEGORİ DAĞILIMI -->
+            <!-- ====================================== -->
+
+            <div class="col-12 col-lg-4">
+
+                <div class="dashboard-card p-4 h-100">
+
+                    <h5 class="mb-4 fw-medium">
+                        Kategori Dağılımı
+                    </h5>
+
+
+                    @if (Model.Categories != null &&
+                                        Model.Categories.Any())
+                    {
+
+                        var mainCategory = Model.Categories
+                        .OrderByDescending(x => x.Percentage)
+                        .First();
+
+
+                        <div class="category-chart">
+
+                            <div class="category-chart-text">
+
+                                <span class="category-percent">
+
+                                    @mainCategory.Percentage.ToString("0")%
+
+                                </span>
+
+                                <span class="category-label">
+
+                                    @mainCategory.CategoryName
+
+                                </span>
+
+                            </div>
+
+                        </div>
+
+
+                        <div class="mt-4">
+
+                            @for (int i = 0; i < Model.Categories.Count; i++)
+                            {
+
+                                var category = Model.Categories[i];
+
+                                var color = categoryColors[
+                                i % categoryColors.Length
+                                ];
+
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                                    <div class="d-flex align-items-center gap-2">
+
+                                        <span class="legend-dot"
+                                              style="background-color: @color">
+                                        </span>
+
+                                        <small>
+                                            @category.CategoryName
+                                        </small>
+
+                                    </div>
+
+                                    <small class="fw-semibold">
+
+                                        @category.Percentage.ToString("0")%
+
+                                    </small>
+
+                                </div>
+
+                            }
+
+                        </div>
+
+                    }
+                    else
+                    {
+
+                        <div class="text-center text-secondary py-5">
+
+                            <span class="material-symbols-outlined fs-1">
+                                category
+                            </span>
+
+                            <div class="mt-2">
+                                Kategori verisi bulunmuyor.
+                            </div>
+
+                        </div>
+
+                    }
+
+                </div>
+
+            </div>
+
+        </div>
+
+
+        <!-- ====================================== -->
+        <!-- EN ÇOK MESAJ GÖNDERENLER -->
+        <!-- ====================================== -->
+
+        <div class="dashboard-card overflow-hidden">
+
+            <div class="p-4 border-bottom d-flex justify-content-between align-items-center">
+
+                <h5 class="mb-0 fw-medium">
+
+                    En Çok Mesaj Gönderenler
+
+                </h5>
+
+                
+
+            </div>
+
+
+            @if (Model.TopSenders != null &&
+                        Model.TopSenders.Any())
+            {
+
+                foreach (var user in Model.TopSenders)
+                {
+
+                    <div class="user-row d-flex justify-content-between align-items-center">
+
+                        <div class="d-flex align-items-center gap-3">
+
+
+                            <!-- PROFİL FOTOĞRAFI -->
+                            @if (!string.IsNullOrEmpty(user.ProfileImageUrl))
+                            {
+
+                                <img src="@user.ProfileImageUrl"
+                                     class="user-avatar"
+                                     alt="@user.FullName">
+
+                            }
+                            else
+                            {
+
+                                var initials = "";
+
+                                if (!string.IsNullOrWhiteSpace(user.FullName))
+                                {
+
+                                    var nameParts = user.FullName
+                                    .Split(
+                                    ' ',
+                                    StringSplitOptions.RemoveEmptyEntries
+                                    );
+
+                                    if (nameParts.Length >= 2)
+                                    {
+
+                                        initials =
+                                        nameParts[0][0].ToString().ToUpper() +
+                                        nameParts[^1][0].ToString().ToUpper();
+
+                                    }
+                                    else
+                                    {
+
+                                        initials =
+                                        nameParts[0][0]
+                                        .ToString()
+                                        .ToUpper();
+
+                                    }
+
+                                }
+
+                                <div class="avatar-initial">
+
+                                    @initials
+
+                                </div>
+
+                            }
+
+
+                            <!-- KULLANICI BİLGİLERİ -->
+
+                            <div>
+
+                                <div class="user-name">
+
+                                    @user.FullName
+
+                                </div>
+
+                                <div class="user-email">
+
+                                    @user.Email
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+
+                        <!-- MESAJ SAYISI -->
+
+                        <div class="text-end">
+
+                            <div class="sent-label">
+
+                                Gönderilen
+
+                            </div>
+
+                            <div class="sent-count">
+
+                                @user.SentMessageCount.ToString("N0")
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                }
+
+            }
+            else
+            {
+
+                <div class="text-center text-secondary py-5">
+
+                    <span class="material-symbols-outlined fs-1">
+                        mail
+                    </span>
+
+                    <div class="mt-2">
+
+                        Henüz mesaj gönderen kullanıcı bulunmuyor.
+
+                    </div>
+
+                </div>
+
+            }
+
+        </div>
+
+    </div>
+
+</div>
+
+
+<script>
+
+    document
+        .getElementById("messageChartFilter")
+        .addEventListener("change", function () {
+
+            const filter = this.value;
+
+            fetch('@Url.Action("MessageChart", "Admin")', {
+
+                method: "POST",
+
+                headers: {
+                    "Content-Type":
+                        "application/x-www-form-urlencoded"
+                },
+
+                body:
+                    "filter=" +
+                    encodeURIComponent(filter)
+
+            })
+            .then(response => {
+
+                if (!response.ok) {
+                    throw new Error("Grafik verisi alınamadı.");
+                }
+
+                return response.text();
+
+            })
+            .then(html => {
+
+                document
+                    .getElementById("messageChart")
+                    .innerHTML = html;
+
+            })
+            .catch(error => {
+
+                console.error(error);
+
+            });
+
+        });
+
+</script>

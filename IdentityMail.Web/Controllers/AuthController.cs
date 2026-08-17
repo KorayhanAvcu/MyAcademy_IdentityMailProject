@@ -618,5 +618,21 @@ namespace IdentityMail.Web.Controllers
                 "Index",
                 "Message");
         }
+
+        [HttpGet]
+        public IActionResult AccessDenied()
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return RedirectToAction("Index", "Admin");
+            }
+
+            if (User.IsInRole("User"))
+            {
+                return RedirectToAction("Index", "Message");
+            }
+
+            return RedirectToAction("Login", "Auth");
+        }
     }
 }

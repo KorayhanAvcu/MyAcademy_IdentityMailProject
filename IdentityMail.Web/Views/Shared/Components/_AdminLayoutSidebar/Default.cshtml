@@ -95,26 +95,26 @@
     {
         <nav class="list-group list-group-flush mt-2">
 
-            <a asp-controller="Admin" asp-action="Dashboard"
-               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")">
+            <a asp-controller="Admin" asp-action="Index"
+               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Index" ? "active" : "")">
                 <i class="bi bi-speedometer2 me-3"></i>
-                Genel Bakış
+                Dashboard
             </a>
 
-            <a asp-controller="User" asp-action="Index"
-               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "User" ? "active" : "")">
+            <a asp-controller="Admin" asp-action="UsersList"
+               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "UsersList" ? "active" : "")">
                 <i class="bi bi-people-fill me-3"></i>
                 Kullanıcılar
             </a>
 
-            <a asp-controller="Admin" asp-action="MessageStatistics"
+            @* <a asp-controller="Admin" asp-action="MessageStatistics"
                class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "MessageStatistics" ? "active" : "")">
                 <i class="bi bi-bar-chart-fill me-3"></i>
                 Mesaj İstatistikleri
-            </a>
+            </a> *@
 
-            <a asp-controller="Admin" asp-action="Complaints"
-               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Complaints" ? "active" : "")">
+            <a asp-controller="Admin" asp-action="MessageReports"
+               class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "MessageReports" ? "active" : "")">
                 <i class="bi bi-flag-fill me-3"></i>
                 Şikayetler
             </a>

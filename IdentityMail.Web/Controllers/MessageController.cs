@@ -1,6 +1,7 @@
 ﻿using IdentityMail.Web.Context;
 using IdentityMail.Web.DTOs.UserMessageDtos;
 using IdentityMail.Web.Entities;
+using IdentityMail.Web.Enums;
 using IdentityMail.Web.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityMail.Web.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class MessageController(
         UserManager<AppUser> _userManager,
         AppDbContext _context) : Controller
@@ -334,12 +335,24 @@ namespace IdentityMail.Web.Controllers
 
             var model = new SendMailDto
             {
+                // Aynı konuşmayı devam ettirebilmek için
+                ConversationId = original.ConversationId,
+
+                // Mesajı atan kişiye cevap ver
                 ReceiverMail = original.Sender?.Email,
-                Subject = original.Subject != null && original.Subject.StartsWith("Re:")
+
+                // Konunun başına Re: ekle
+                Subject = original.Subject != null &&
+                          original.Subject.StartsWith("Re:")
                     ? original.Subject
                     : $"Re: {original.Subject}",
+
                 CategoryId = original.CategoryId,
-                Body = $"\n\n---- Orijinal Mesaj ----\n{original.Sender?.FirstName} {original.Sender?.LastName} yazdı:\n{original.Body}"
+
+                // Orijinal mesajı göster
+                Body = $"\n\n---- Orijinal Mesaj ----\n" +
+                       $"{original.Sender?.FirstName} {original.Sender?.LastName} yazdı:\n" +
+                       $"{original.Body}"
             };
 
             await LoadCategories(user.Id);
@@ -698,6 +711,157 @@ namespace IdentityMail.Web.Controllers
                     Text = x.CategoryName
                 })
                 .ToListAsync();
+        }
+
+        
+        [HttpGet]
+        public async Task<IActionResult> Report(int id)
+        {
+            var userId = int.Parse(
+                _userManager.GetUserId(User)!);
+
+            var message = await _context.UserMessages
+                .Include(x => x.Sender)
+                .FirstOrDefaultAsync(x =>
+                    x.Id == id &&
+                    x.ReceiverId == userId &&
+                    x.IsDraft != true &&
+                    x.IsDelete != true);
+
+            if (message == null)
+            {
+                return NotFound();
+            }
+
+            // Kullanıcı kendi mesajına şikayet edemesin
+            if (message.SenderId == userId)
+            {
+                return BadRequest("Kendi mesajınızı şikayet edemezsiniz.");
+            }
+
+            // Aynı kullanıcı aynı mesajı tekrar şikayet edemesin
+            var alreadyReported = await _context.MessageReports
+                .AnyAsync(x =>
+                    x.MessageId == id &&
+                    x.ReporterId == userId);
+
+            if (alreadyReported)
+            {
+                TempData["ReportError"] =
+                    "Bu mesajı daha önce şikayet ettiniz.";
+
+                return RedirectToAction(
+                    "MailDetail",
+                    new { id });
+            }
+
+            var model = new CreateMessageReportDto
+            {
+                MessageId = message.Id
+            };
+
+            ViewBag.Subject = message.Subject;
+            ViewBag.SenderName =
+                $"{message.Sender.FirstName} {message.Sender.LastName}";
+
+            return View(model);
+        }
+        // =====================================================
+        // ŞİKAYET OLUŞTUR
+        // =====================================================
+
+        
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ReportMessage(
+            CreateMessageReportDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var messageForView = await _context.UserMessages
+                    .Include(x => x.Sender)
+                    .FirstOrDefaultAsync(x => x.Id == dto.MessageId);
+
+                if (messageForView != null)
+                {
+                    ViewBag.Subject = messageForView.Subject;
+
+                    ViewBag.SenderName =
+                        $"{messageForView.Sender.FirstName} " +
+                        $"{messageForView.Sender.LastName}";
+                }
+
+                return View("Report", dto);
+            }
+
+            var userId = int.Parse(
+                _userManager.GetUserId(User)!);
+
+            // Mesaj gerçekten bu kullanıcıya mı ait?
+            var message = await _context.UserMessages
+                .FirstOrDefaultAsync(x =>
+                    x.Id == dto.MessageId &&
+                    x.ReceiverId == userId &&
+                    x.IsDraft != true &&
+                    x.IsDelete != true);
+
+            if (message == null)
+            {
+                return NotFound();
+            }
+
+            // Kendi mesajını şikayet edemez
+            if (message.SenderId == userId)
+            {
+                return BadRequest(
+                    "Kendi mesajınızı şikayet edemezsiniz.");
+            }
+
+            // Daha önce şikayet edilmiş mi?
+            var alreadyReported = await _context.MessageReports
+                .AnyAsync(x =>
+                    x.MessageId == dto.MessageId &&
+                    x.ReporterId == userId);
+
+            if (alreadyReported)
+            {
+                TempData["ReportError"] =
+                    "Bu mesajı daha önce şikayet ettiniz.";
+
+                return RedirectToAction(
+                    "MailDetail",
+                    new { id = dto.MessageId });
+            }
+
+            var report = new MessageReport
+            {
+                MessageId = dto.MessageId,
+
+                ReporterId = userId,
+
+                Reason = dto.Reason,
+
+                Description = dto.Description,
+
+                Status = ReportStatus.Pending,
+
+                ReviewedById = null,
+
+                AdminNote = null,
+
+                CreatedDate = DateTime.Now,
+
+                ReviewedDate = null
+            };
+
+            _context.MessageReports.Add(report);
+
+            await _context.SaveChangesAsync();
+
+            TempData["ReportSuccess"] =
+                "Mesajınız başarıyla şikayet edildi. Yönetici inceleyecektir.";
+
+            return RedirectToAction("Index");
         }
     }
 }

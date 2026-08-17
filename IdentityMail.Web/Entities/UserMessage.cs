@@ -17,5 +17,8 @@
         public Category? Category { get; set; } = null!;
         public int? CategoryId { get; set; }
 
+        public int? ConversationId { get; set; }
+        public Conversation? Conversation { get; set; }
+
     }
 }

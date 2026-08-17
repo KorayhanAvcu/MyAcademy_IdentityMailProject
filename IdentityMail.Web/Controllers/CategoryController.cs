@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityMail.Web.Controllers
 {
-    [Authorize]
+    [Authorize(Roles = "User")]
     public class CategoryController(
         AppDbContext _context,
         UserManager<AppUser> _userManager) : Controller

@@ -4,6 +4,7 @@ using IdentityMail.Web.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace IdentityMail.Web.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260815180827_mig_messagereport")]
+    partial class mig_messagereport
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -156,26 +159,6 @@ namespace IdentityMail.Web.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("IdentityMail.Web.Entities.Conversation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Conversations");
-                });
-
             modelBuilder.Entity("IdentityMail.Web.Entities.MessageReport", b =>
                 {
                     b.Property<int>("Id")
@@ -238,9 +221,6 @@ namespace IdentityMail.Web.Migrations
                     b.Property<int?>("CategoryId")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ConversationId")
-                        .HasColumnType("int");
-
                     b.Property<bool>("IsDelete")
                         .HasColumnType("bit");
 
@@ -269,8 +249,6 @@ namespace IdentityMail.Web.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
-
-                    b.HasIndex("ConversationId");
 
                     b.HasIndex("ReceiverId");
 
@@ -424,11 +402,6 @@ namespace IdentityMail.Web.Migrations
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
-                    b.HasOne("IdentityMail.Web.Entities.Conversation", "Conversation")
-                        .WithMany("Messages")
-                        .HasForeignKey("ConversationId")
-                        .OnDelete(DeleteBehavior.Cascade);
-
                     b.HasOne("IdentityMail.Web.Entities.AppUser", "Receiver")
                         .WithMany("ReceivedMessages")
                         .HasForeignKey("ReceiverId")
@@ -441,8 +414,6 @@ namespace IdentityMail.Web.Migrations
                         .IsRequired();
 
                     b.Navigation("Category");
-
-                    b.Navigation("Conversation");
 
                     b.Navigation("Receiver");
 
@@ -505,11 +476,6 @@ namespace IdentityMail.Web.Migrations
                     b.Navigation("ReceivedMessages");
 
                     b.Navigation("SentMessages");
-                });
-
-            modelBuilder.Entity("IdentityMail.Web.Entities.Conversation", b =>
-                {
-                    b.Navigation("Messages");
                 });
 #pragma warning restore 612, 618
         }
