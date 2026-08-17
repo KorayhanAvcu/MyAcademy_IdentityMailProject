@@ -12,47 +12,50 @@ namespace IdentityMail.Web.Context
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
+            // User -> Gönderdiği mesajlar
             builder.Entity<AppUser>()
-                .HasMany(message => message.SentMessages)
-                .WithOne(s => s.Sender)
+                .HasMany(x => x.SentMessages)
+                .WithOne(x => x.Sender)
                 .HasForeignKey(x => x.SenderId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // User -> Aldığı mesajlar
             builder.Entity<AppUser>()
-                .HasMany(message => message.ReceivedMessages)
-                .WithOne(s => s.Receiver)
+                .HasMany(x => x.ReceivedMessages)
+                .WithOne(x => x.Receiver)
                 .HasForeignKey(x => x.ReceiverId)
                 .OnDelete(DeleteBehavior.Restrict);
 
+            // Category -> User (UserId nullable)
             builder.Entity<Category>()
-                .HasOne(c => c.User)
+                .HasOne(x => x.User)
                 .WithMany()
-                .HasForeignKey(c => c.UserId)
+                .HasForeignKey(x => x.UserId)
                 .IsRequired(false)
                 .OnDelete(DeleteBehavior.SetNull);
 
-            // Conversation -> UserMessage
+            // Conversation -> Mesajlar
             builder.Entity<Conversation>()
-                .HasMany(c => c.Messages)
-                .WithOne(m => m.Conversation)
-                .HasForeignKey(m => m.ConversationId)
+                .HasMany(x => x.Messages)
+                .WithOne(x => x.Conversation)
+                .HasForeignKey(x => x.ConversationId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // MessageReport -> UserMessage
+            // MessageReport -> Raporlanan mesaj
             builder.Entity<MessageReport>()
                 .HasOne(x => x.Message)
                 .WithMany()
                 .HasForeignKey(x => x.MessageId)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // MessageReport -> Reporter
+            // MessageReport -> Raporlayan kullanıcı
             builder.Entity<MessageReport>()
                 .HasOne(x => x.Reporter)
                 .WithMany()
                 .HasForeignKey(x => x.ReporterId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // MessageReport -> ReviewedBy
+            // MessageReport -> İnceleyen admin
             builder.Entity<MessageReport>()
                 .HasOne(x => x.ReviewedBy)
                 .WithMany()

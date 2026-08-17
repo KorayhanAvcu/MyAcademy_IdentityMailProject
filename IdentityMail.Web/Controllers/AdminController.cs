@@ -10,15 +10,13 @@ using System.Globalization;
 
 namespace IdentityMail.Web.Controllers
 {
+    // Sadece Admin rolündeki kullanıcılar erişebilir
     [Authorize(Roles = "Admin")]
-    public class AdminController(UserManager<AppUser> _userManager,
-                                AppDbContext _context) : Controller
+    public class AdminController(
+        UserManager<AppUser> _userManager,
+        AppDbContext _context) : Controller
     {
-        // =========================================================
-        // USER ROLÜNDEKİ KULLANICILARI GETİR
-        // RoleId = 2 -> User
-        // =========================================================
-
+        // User rolündeki kullanıcıların ID'lerini getirir
         private IQueryable<int> GetUserIds()
         {
             return _context.UserRoles
@@ -26,12 +24,7 @@ namespace IdentityMail.Web.Controllers
                 .Select(x => x.UserId);
         }
 
-
-        // =========================================================
-        // KATEGORİ İSTATİSTİKLERİ
-        // SADECE USER ROLÜ
-        // =========================================================
-
+        // Kategorilere göre mesaj istatistiklerini getirir
         private async Task<List<CategoryStatisticDto>> GetCategoryStatistics()
         {
             var userIds = GetUserIds();
@@ -47,7 +40,6 @@ namespace IdentityMail.Web.Controllers
                 return new List<CategoryStatisticDto>();
             }
 
-
             var categories = await _context.UserMessages
                 .Where(x =>
                     x.IsDraft != true &&
@@ -61,16 +53,12 @@ namespace IdentityMail.Web.Controllers
                 .Select(g => new CategoryStatisticDto
                 {
                     CategoryId = g.Key.CategoryId!.Value,
-
                     CategoryName = g.Key.CategoryName,
-
                     MessageCount = g.Count(),
-
                     Percentage = 0
                 })
                 .OrderByDescending(x => x.MessageCount)
                 .ToListAsync();
-
 
             foreach (var category in categories)
             {
@@ -80,20 +68,13 @@ namespace IdentityMail.Web.Controllers
                     100;
             }
 
-
             return categories;
         }
 
-
-        // =========================================================
-        // EN ÇOK MESAJ GÖNDEREN USERLAR
-        // SADECE USER ROLÜ
-        // =========================================================
-
+        // En çok mesaj gönderen 5 kullanıcıyı getirir
         private async Task<List<TopSenderDto>> GetTopSenders()
         {
             var userIds = GetUserIds();
-
 
             var topSenders = await _context.UserMessages
                 .Where(x =>
@@ -111,48 +92,30 @@ namespace IdentityMail.Web.Controllers
                 .Select(g => new TopSenderDto
                 {
                     UserId = g.Key.SenderId,
-
                     FullName =
                         g.Key.FirstName + " " +
                         g.Key.LastName,
-
                     Email = g.Key.Email,
-
-                    ProfileImageUrl =
-                        g.Key.ProfileImageUrl,
-
+                    ProfileImageUrl = g.Key.ProfileImageUrl,
                     SentMessageCount = g.Count()
                 })
                 .OrderByDescending(x => x.SentMessageCount)
                 .Take(5)
                 .ToListAsync();
 
-
             return topSenders;
         }
 
-
-        // =========================================================
-        // INDEX
-        // =========================================================
-
+        // Admin dashboard ana sayfası
         public async Task<IActionResult> Index()
         {
             var userIds = GetUserIds();
 
-
-            // -----------------------------------------------------
-            // TOPLAM USER SAYISI
-            // -----------------------------------------------------
-
+            // Toplam kullanıcı sayısı
             var totalUserCount =
                 await userIds.CountAsync();
 
-
-            // -----------------------------------------------------
-            // AKTİF USER SAYISI
-            // -----------------------------------------------------
-
+            // Aktif kullanıcı sayısı
             var activeUserCount =
                 await _context.Users
                     .Where(x =>
@@ -160,27 +123,16 @@ namespace IdentityMail.Web.Controllers
                         userIds.Contains(x.Id))
                     .CountAsync();
 
-
-            // -----------------------------------------------------
-            // TOPLAM MESAJ
-            // SADECE USERLARIN MESAJLARI
-            // -----------------------------------------------------
-
+            // Toplam gönderilen mesaj sayısı
             var totalMessageCount =
                 await _context.UserMessages
                     .CountAsync(x =>
                         x.IsDraft != true &&
                         userIds.Contains(x.SenderId));
 
-
-            // -----------------------------------------------------
-            // BUGÜN GÖNDERİLEN MESAJ
-            // -----------------------------------------------------
-
+            // Bugün gönderilen mesaj sayısı
             var today = DateTime.Today;
-
             var tomorrow = today.AddDays(1);
-
 
             var todayMessageCount =
                 await _context.UserMessages
@@ -190,11 +142,7 @@ namespace IdentityMail.Web.Controllers
                         x.IsDraft != true &&
                         userIds.Contains(x.SenderId));
 
-
-            // -----------------------------------------------------
-            // OKUNMAMIŞ MESAJ
-            // -----------------------------------------------------
-
+            // Okunmamış mesaj sayısı
             var unreadMessageCount =
                 await _context.UserMessages
                     .CountAsync(x =>
@@ -202,11 +150,7 @@ namespace IdentityMail.Web.Controllers
                         x.IsDraft != true &&
                         userIds.Contains(x.SenderId));
 
-
-            // -----------------------------------------------------
-            // ÇÖP KUTUSU
-            // -----------------------------------------------------
-
+            // Çöpteki mesaj sayısı
             var deletedMessageCount =
                 await _context.UserMessages
                     .CountAsync(x =>
@@ -214,77 +158,43 @@ namespace IdentityMail.Web.Controllers
                         x.IsDraft != true &&
                         userIds.Contains(x.SenderId));
 
-
-            // -----------------------------------------------------
-            // GRAFİK
-            // -----------------------------------------------------
-
+            // Son 7 günlük mesaj grafiği
             var dailyMessages =
                 await GetLast7DaysMessages();
 
-
-            // -----------------------------------------------------
-            // KATEGORİLER
-            // -----------------------------------------------------
-
+            // Kategori istatistikleri
             var categories =
                 await GetCategoryStatistics();
 
-
-            // -----------------------------------------------------
-            // EN ÇOK MESAJ GÖNDERENLER
-            // -----------------------------------------------------
-
+            // En çok mesaj gönderen kullanıcılar
             var topSenders =
                 await GetTopSenders();
 
-
-            // -----------------------------------------------------
-            // DASHBOARD DTO
-            // -----------------------------------------------------
-
+            // Dashboard DTO'sunu oluşturur
             var model = new DashboardDto
             {
                 TotalUserCount = totalUserCount,
-
                 ActiveUserCount = activeUserCount,
-
                 TotalMessageCount = totalMessageCount,
-
                 TodayMessageCount = todayMessageCount,
-
                 UnreadMessageCount = unreadMessageCount,
-
                 DeletedMessageCount = deletedMessageCount,
-
                 DailyMessages = dailyMessages,
-
                 Categories = categories,
-
                 TopSenders = topSenders
             };
-
 
             return View(model);
         }
 
-
-        // =========================================================
-        // SON 7 GÜN
-        // SADECE USERLARIN MESAJLARI
-        // =========================================================
-
+        // Son 7 gündeki mesaj sayılarını getirir
         private async Task<List<DailyMessageDto>> GetLast7DaysMessages()
         {
             var userIds = GetUserIds();
 
-
             var today = DateTime.Today;
-
             var startDate = today.AddDays(-6);
-
             var tomorrow = today.AddDays(1);
-
 
             var messages = await _context.UserMessages
                 .Where(x =>
@@ -294,13 +204,11 @@ namespace IdentityMail.Web.Controllers
                     userIds.Contains(x.SenderId))
                 .ToListAsync();
 
-
             var result = Enumerable
                 .Range(0, 7)
                 .Select(i =>
                 {
                     var date = startDate.AddDays(i);
-
 
                     return new DailyMessageDto
                     {
@@ -313,7 +221,6 @@ namespace IdentityMail.Web.Controllers
                             DayOfWeek.Friday => "Cum",
                             DayOfWeek.Saturday => "Cmt",
                             DayOfWeek.Sunday => "Paz",
-
                             _ => ""
                         },
 
@@ -323,32 +230,22 @@ namespace IdentityMail.Web.Controllers
                 })
                 .ToList();
 
-
             return result;
         }
 
-
-        // =========================================================
-        // BU AY
-        // SADECE USERLARIN MESAJLARI
-        // =========================================================
-
+        // Bu ayın günlük mesaj sayılarını getirir
         private async Task<List<DailyMessageDto>> GetThisMonthMessages()
         {
             var userIds = GetUserIds();
 
-
             var today = DateTime.Today;
-
 
             var startDate = new DateTime(
                 today.Year,
                 today.Month,
                 1);
 
-
             var endDate = startDate.AddMonths(1);
-
 
             var messages = await _context.UserMessages
                 .Where(x =>
@@ -358,12 +255,10 @@ namespace IdentityMail.Web.Controllers
                     userIds.Contains(x.SenderId))
                 .ToListAsync();
 
-
             var daysInMonth =
                 DateTime.DaysInMonth(
                     today.Year,
                     today.Month);
-
 
             var result = Enumerable
                 .Range(1, daysInMonth)
@@ -373,7 +268,6 @@ namespace IdentityMail.Web.Controllers
                         today.Year,
                         today.Month,
                         day);
-
 
                     return new DailyMessageDto
                     {
@@ -385,32 +279,22 @@ namespace IdentityMail.Web.Controllers
                 })
                 .ToList();
 
-
             return result;
         }
 
-
-        // =========================================================
-        // BU YIL
-        // SADECE USERLARIN MESAJLARI
-        // =========================================================
-
+        // Bu yılın aylık mesaj sayılarını getirir
         private async Task<List<DailyMessageDto>> GetThisYearMessages()
         {
             var userIds = GetUserIds();
 
-
             var today = DateTime.Today;
-
 
             var startDate = new DateTime(
                 today.Year,
                 1,
                 1);
 
-
             var endDate = startDate.AddYears(1);
-
 
             var messages = await _context.UserMessages
                 .Where(x =>
@@ -419,7 +303,6 @@ namespace IdentityMail.Web.Controllers
                     x.IsDraft != true &&
                     userIds.Contains(x.SenderId))
                 .ToListAsync();
-
 
             var result = Enumerable
                 .Range(1, 12)
@@ -434,77 +317,61 @@ namespace IdentityMail.Web.Controllers
                             "MMM",
                             new CultureInfo("tr-TR"));
 
-
                     var messageCount =
                         messages.Count(x =>
                             x.SendDate.Month == month);
 
-
                     return new DailyMessageDto
                     {
                         Label = monthName,
-
                         Count = messageCount
                     };
                 })
                 .ToList();
 
-
             return result;
         }
 
-
-        // =========================================================
-        // GRAFİK FİLTRESİ
-        // =========================================================
-
+        // Grafik için seçilen tarih aralığını getirir
         [HttpPost]
         public async Task<IActionResult> MessageChart(
             MessageChartFilter filter)
         {
             List<DailyMessageDto> dailyMessages;
 
-
             switch (filter)
             {
+                // Son 7 gün
                 case MessageChartFilter.Last7Days:
-
                     dailyMessages =
                         await GetLast7DaysMessages();
-
                     break;
 
-
+                // Bu ay
                 case MessageChartFilter.ThisMonth:
-
                     dailyMessages =
                         await GetThisMonthMessages();
-
                     break;
 
-
+                // Bu yıl
                 case MessageChartFilter.ThisYear:
-
                     dailyMessages =
                         await GetThisYearMessages();
-
                     break;
 
-
+                // Varsayılan: Son 7 gün
                 default:
-
                     dailyMessages =
                         await GetLast7DaysMessages();
-
                     break;
             }
-
 
             return PartialView(
                 "_DailyMessageChart",
                 dailyMessages);
         }
 
+        // Sistemdeki kullanıcıları listeler
         public async Task<IActionResult> UsersList()
         {
             var users = await _userManager.Users.ToListAsync();
@@ -518,26 +385,26 @@ namespace IdentityMail.Web.Controllers
                 userList.Add(new UserListDto
                 {
                     Id = user.Id,
-
                     FullName =
                         user.FirstName + " " +
                         user.LastName,
-
                     Email = user.Email,
-
                     IsActive = user.IsActive,
-
                     EmailConfirmed = user.EmailConfirmed,
-
                     Roles = roles
                 });
             }
-            userList = userList.OrderByDescending(x => x.Roles.Contains("Admin"))
-                               .ThenBy(x => x.FullName)
-                               .ToList();
+
+            // Adminleri üstte gösterir
+            userList = userList
+                .OrderByDescending(x => x.Roles.Contains("Admin"))
+                .ThenBy(x => x.FullName)
+                .ToList();
+
             return View(userList);
         }
 
+        // Kullanıcı düzenleme sayfası
         public async Task<IActionResult> UserEdit(int id)
         {
             var user = await _userManager.FindByIdAsync(id.ToString());
@@ -547,23 +414,18 @@ namespace IdentityMail.Web.Controllers
             var model = new UserEditDto
             {
                 Id = user.Id,
-
                 FirstName = user.FirstName,
-
                 LastName = user.LastName,
-
                 Email = user.Email,
-
                 IsActive = user.IsActive,
-
                 EmailConfirmed = user.EmailConfirmed,
-
                 Role = roles.FirstOrDefault()
             };
 
             return View(model);
         }
 
+        // Kullanıcı bilgilerini ve rolünü günceller
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditUser(UserEditDto model)
@@ -580,24 +442,17 @@ namespace IdentityMail.Web.Controllers
                 return NotFound();
             }
 
-            // Kullanıcı bilgileri
-
+            // Kullanıcı bilgilerini günceller
             user.FirstName = model.FirstName;
-
             user.LastName = model.LastName;
-
             user.Email = model.Email;
-
             user.UserName = model.Email;
 
-            // Aktif / pasif
-
+            // Aktiflik durumunu günceller
             user.IsActive = model.IsActive;
 
-            // Email onayı
-
+            // Email onay durumunu günceller
             user.EmailConfirmed = model.EmailConfirmed;
-
 
             var result = await _userManager.UpdateAsync(user);
 
@@ -611,11 +466,7 @@ namespace IdentityMail.Web.Controllers
                 return View(model);
             }
 
-
-            // =========================
-            // ROL DEĞİŞTİRME
-            // =========================
-
+            // Mevcut rolleri kaldırır
             var currentRoles = await _userManager.GetRolesAsync(user);
 
             if (currentRoles.Any())
@@ -638,9 +489,7 @@ namespace IdentityMail.Web.Controllers
                 }
             }
 
-
-            // Yeni rolü ata
-
+            // Yeni rolü ekler
             if (!string.IsNullOrEmpty(model.Role))
             {
                 var addResult =
@@ -661,9 +510,10 @@ namespace IdentityMail.Web.Controllers
                 }
             }
 
-
             return RedirectToAction("UsersList");
         }
+
+        // Mesaj şikayetlerini listeler
         public async Task<IActionResult> MessageReports()
         {
             var reports = await _context.MessageReports
@@ -675,9 +525,7 @@ namespace IdentityMail.Web.Controllers
                 .Select(x => new MessageReportDto
                 {
                     Id = x.Id,
-
                     MessageId = x.MessageId,
-
                     Subject = x.Message.Subject,
 
                     ReporterName =
@@ -691,19 +539,17 @@ namespace IdentityMail.Web.Controllers
                         x.Message.Sender.LastName,
 
                     Reason = x.Reason,
-
                     Description = x.Description,
-
                     Status = x.Status,
-
                     CreatedDate = x.CreatedDate,
-
                     AdminNote = x.AdminNote
                 })
                 .ToListAsync();
 
             return View(reports);
         }
+
+        // Şikayet detayını getirir
         [HttpGet]
         public async Task<IActionResult> MessageReportDetail(int id)
         {
@@ -719,11 +565,8 @@ namespace IdentityMail.Web.Controllers
             var model = new MessageReportDetailDto
             {
                 Id = report.Id,
-
                 MessageId = report.MessageId,
-
                 Subject = report.Message.Subject,
-
                 Body = report.Message.Body,
 
                 ReporterName =
@@ -739,26 +582,23 @@ namespace IdentityMail.Web.Controllers
                 SenderEmail = report.Message.Sender.Email,
 
                 Reason = report.Reason,
-
                 Description = report.Description,
-
                 Status = report.Status,
-
                 CreatedDate = report.CreatedDate,
-
                 AdminNote = report.AdminNote,
-
                 ReviewedDate = report.ReviewedDate
             };
 
             return View(model);
         }
+
+        // Şikayet durumunu günceller
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> UpdateMessageReport(
-    int id,
-    ReportStatus status,
-    string? adminNote)
+            int id,
+            ReportStatus status,
+            string? adminNote)
         {
             var report = await _context.MessageReports
                 .FirstOrDefaultAsync(x => x.Id == id);
@@ -772,11 +612,8 @@ namespace IdentityMail.Web.Controllers
                 return RedirectToAction("Login", "Auth");
 
             report.Status = status;
-
             report.AdminNote = adminNote;
-
             report.ReviewedById = admin.Id;
-
             report.ReviewedDate = DateTime.Now;
 
             await _context.SaveChangesAsync();

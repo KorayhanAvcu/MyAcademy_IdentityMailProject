@@ -11,25 +11,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace IdentityMail.Web.Controllers
 {
+    // Sadece User rolündeki kullanıcılar erişebilir.
     [Authorize(Roles = "User")]
     public class MessageController(
         UserManager<AppUser> _userManager,
         AppDbContext _context) : Controller
     {
-        // =========================
-        // GELEN KUTUSU
-        // =========================
-
+        // Gelen kutusunu listeler ve filtreleme işlemlerini yapar.
         public async Task<IActionResult> Index(MessageFilterDto filter)
         {
             var user = await _userManager.GetUserAsync(User);
 
+            // Kullanıcı bulunamazsa login sayfasına gönder.
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Sayfalama değerlerini varsayılan değerlere çek.
             if (filter.Page < 1) filter.Page = 1;
             if (filter.PageSize < 1) filter.PageSize = 10;
 
+            // Kullanıcının gelen mesajlarını getir.
             var query = _context.UserMessages
                 .Include(x => x.Sender)
                 .Include(x => x.Category)
@@ -37,63 +38,77 @@ namespace IdentityMail.Web.Controllers
                 .Where(x => x.IsDelete == false)
                 .Where(x => x.IsDraft != true);
 
-            // Gönderen adına / emailine arama
+            // Gönderen adına veya email adresine göre ara.
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
             {
                 var term = filter.SearchTerm.Trim().ToLower();
+
                 query = query.Where(x =>
-                    (x.Sender.FirstName + " " + x.Sender.LastName).ToLower().Contains(term) ||
+                    (x.Sender.FirstName + " " + x.Sender.LastName)
+                        .ToLower()
+                        .Contains(term) ||
                     x.Sender.Email.ToLower().Contains(term));
             }
 
-            // Konuya göre arama
+            // Mesaj konusuna göre filtrele.
             if (!string.IsNullOrWhiteSpace(filter.Subject))
             {
-                query = query.Where(x => x.Subject.Contains(filter.Subject));
+                query = query.Where(x =>
+                    x.Subject.Contains(filter.Subject));
             }
 
-            // Tarih aralığı
+            // Başlangıç tarihine göre filtrele.
             if (filter.StartDate.HasValue)
             {
-                query = query.Where(x => x.SendDate >= filter.StartDate.Value.Date);
+                query = query.Where(x =>
+                    x.SendDate >= filter.StartDate.Value.Date);
             }
 
+            // Bitiş tarihini de dahil ederek filtrele.
             if (filter.EndDate.HasValue)
             {
                 var end = filter.EndDate.Value.Date.AddDays(1);
-                query = query.Where(x => x.SendDate < end);
+
+                query = query.Where(x =>
+                    x.SendDate < end);
             }
 
-            // Kategori
+            // Kategoriye göre filtrele.
             if (filter.CategoryId.HasValue)
             {
-                query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
+                query = query.Where(x =>
+                    x.CategoryId == filter.CategoryId.Value);
             }
 
-            // Okundu / Okunmadı
+            // Okunmuş / okunmamış durumuna göre filtrele.
             if (filter.IsRead.HasValue)
             {
-                query = query.Where(x => x.IsRead == filter.IsRead.Value);
+                query = query.Where(x =>
+                    x.IsRead == filter.IsRead.Value);
             }
 
-            // Önemli
+            // Önemli mesajlara göre filtrele.
             if (filter.IsImportant.HasValue)
             {
-                query = query.Where(x => x.IsImportant == filter.IsImportant.Value);
+                query = query.Where(x =>
+                    x.IsImportant == filter.IsImportant.Value);
             }
 
-            // Sıralama
+            // Mesajları tarihe göre sırala.
             query = filter.SortOrder == "asc"
                 ? query.OrderBy(x => x.SendDate)
                 : query.OrderByDescending(x => x.SendDate);
 
+            // Toplam mesaj sayısını hesapla.
             var totalCount = await query.CountAsync();
 
+            // İstenen sayfadaki mesajları getir.
             var items = await query
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
                 .ToListAsync();
 
+            // Sayfalama sonucunu oluştur.
             var result = new PagedResult<UserMessage>
             {
                 Items = items,
@@ -102,7 +117,9 @@ namespace IdentityMail.Web.Controllers
                 TotalCount = totalCount
             };
 
+            // Kategorileri ve kullanıcı bilgilerini View'a gönder.
             await LoadCategories(user.Id);
+
             ViewBag.Filter = filter;
             ViewBag.fullName = $"{user.FirstName} {user.LastName}";
 
@@ -110,10 +127,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // ÖNEMLİ MESAJLAR
-        // =========================
-
+        // Önemli olarak işaretlenen mesajları listeler.
         public async Task<IActionResult> Important()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -135,10 +149,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // GÖNDERİLENLER
-        // =========================
-
+        // Kullanıcının gönderdiği mesajları listeler.
         public async Task<IActionResult> SentMail(MessageFilterDto filter)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -146,9 +157,11 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Sayfalama değerlerini kontrol et.
             if (filter.Page < 1) filter.Page = 1;
             if (filter.PageSize < 1) filter.PageSize = 10;
 
+            // Kullanıcının gönderdiği mesajları getir.
             var query = _context.UserMessages
                 .Include(x => x.Receiver)
                 .Include(x => x.Category)
@@ -156,53 +169,70 @@ namespace IdentityMail.Web.Controllers
                 .Where(x => x.IsDelete == false)
                 .Where(x => x.IsDraft != true);
 
-            // Alıcı adına / emailine arama
+            // Alıcının adına veya email adresine göre ara.
             if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
             {
                 var term = filter.SearchTerm.Trim().ToLower();
+
                 query = query.Where(x =>
-                    (x.Receiver.FirstName + " " + x.Receiver.LastName).ToLower().Contains(term) ||
+                    (x.Receiver.FirstName + " " + x.Receiver.LastName)
+                        .ToLower()
+                        .Contains(term) ||
                     x.Receiver.Email.ToLower().Contains(term));
             }
 
+            // Konuya göre filtrele.
             if (!string.IsNullOrWhiteSpace(filter.Subject))
             {
-                query = query.Where(x => x.Subject.Contains(filter.Subject));
+                query = query.Where(x =>
+                    x.Subject.Contains(filter.Subject));
             }
 
+            // Tarih filtresi uygula.
             if (filter.StartDate.HasValue)
             {
-                query = query.Where(x => x.SendDate >= filter.StartDate.Value.Date);
+                query = query.Where(x =>
+                    x.SendDate >= filter.StartDate.Value.Date);
             }
 
             if (filter.EndDate.HasValue)
             {
                 var end = filter.EndDate.Value.Date.AddDays(1);
-                query = query.Where(x => x.SendDate < end);
+
+                query = query.Where(x =>
+                    x.SendDate < end);
             }
 
+            // Kategoriye göre filtrele.
             if (filter.CategoryId.HasValue)
             {
-                query = query.Where(x => x.CategoryId == filter.CategoryId.Value);
+                query = query.Where(x =>
+                    x.CategoryId == filter.CategoryId.Value);
             }
 
-            // Alıcının okuyup okumadığı
+            // Alıcının mesajı okuyup okumadığını filtrele.
             if (filter.IsRead.HasValue)
             {
-                query = query.Where(x => x.IsRead == filter.IsRead.Value);
+                query = query.Where(x =>
+                    x.IsRead == filter.IsRead.Value);
             }
 
+            // Önemli mesaj filtresi uygula.
             if (filter.IsImportant.HasValue)
             {
-                query = query.Where(x => x.IsImportant == filter.IsImportant.Value);
+                query = query.Where(x =>
+                    x.IsImportant == filter.IsImportant.Value);
             }
 
+            // Mesajları tarihe göre sırala.
             query = filter.SortOrder == "asc"
                 ? query.OrderBy(x => x.SendDate)
                 : query.OrderByDescending(x => x.SendDate);
 
+            // Toplam mesaj sayısını bul.
             var totalCount = await query.CountAsync();
 
+            // Sayfadaki mesajları getir.
             var items = await query
                 .Skip((filter.Page - 1) * filter.PageSize)
                 .Take(filter.PageSize)
@@ -223,10 +253,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // YENİ MAIL SAYFASI
-        // =========================
-
+        // Yeni mail oluşturma sayfasını açar.
         [HttpGet]
         public async Task<IActionResult> SendMail()
         {
@@ -235,15 +262,14 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Mail formunda kullanılacak kategorileri yükle.
             await LoadCategories(user.Id);
+
             return View(new SendMailDto());
         }
 
 
-        // =========================
-        // MAIL GÖNDER
-        // =========================
-
+        // Yeni mail gönderir veya taslağı gönderir.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SendMail(SendMailDto sendMailDto)
@@ -253,16 +279,16 @@ namespace IdentityMail.Web.Controllers
             if (sender == null)
                 return RedirectToAction("Login", "Auth");
 
-            // 1) Data annotation kontrolleri en başta yapılır
+            // Form doğrulaması başarısızsa aynı sayfaya dön.
             if (!ModelState.IsValid)
             {
                 await LoadCategories(sender.Id);
                 return View(sendMailDto);
             }
 
-            // 2) Eğer mevcut bir taslaktan gönderiliyorsa taslağı bul
             UserMessage? message = null;
 
+            // ID varsa mevcut taslağı bul.
             if (sendMailDto.Id.HasValue)
             {
                 message = await _context.UserMessages
@@ -275,9 +301,11 @@ namespace IdentityMail.Web.Controllers
                     return NotFound();
             }
 
-            // 3) Alıcı kontrolü (ModelState geçtiği için ReceiverMail artık boş olamaz)
-            var receiver = await _userManager.FindByEmailAsync(sendMailDto.ReceiverMail!.Trim());
+            // Alıcı email adresinden kullanıcıyı bul.
+            var receiver = await _userManager
+                .FindByEmailAsync(sendMailDto.ReceiverMail!.Trim());
 
+            // Alıcı sistemde yoksa hata göster.
             if (receiver == null)
             {
                 ModelState.AddModelError(
@@ -288,13 +316,18 @@ namespace IdentityMail.Web.Controllers
                 return View(sendMailDto);
             }
 
-            // 4) Yeni mesaj oluştur
+            // Yeni mesaj oluştur.
             if (message == null)
             {
-                message = new UserMessage { SenderId = sender.Id };
+                message = new UserMessage
+                {
+                    SenderId = sender.Id
+                };
+
                 _context.UserMessages.Add(message);
             }
 
+            // Mesaj bilgilerini doldur.
             message.ReceiverId = receiver.Id;
             message.Subject = sendMailDto.Subject;
             message.Body = sendMailDto.Body;
@@ -307,14 +340,12 @@ namespace IdentityMail.Web.Controllers
 
             await _context.SaveChangesAsync();
 
+            // Mail gönderildikten sonra gelen kutusuna dön.
             return RedirectToAction("Index");
         }
 
 
-        // =========================
-        // MESAJI YANITLA
-        // =========================
-
+        // Gelen mesaja cevap verme ekranını açar.
         [HttpGet]
         public async Task<IActionResult> Reply(int id)
         {
@@ -323,6 +354,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Cevap verilecek mesajı getir.
             var original = await _context.UserMessages
                 .Include(x => x.Sender)
                 .FirstOrDefaultAsync(x =>
@@ -333,15 +365,13 @@ namespace IdentityMail.Web.Controllers
             if (original == null)
                 return NotFound();
 
+            // Cevap formunu orijinal mesaj bilgileriyle doldur.
             var model = new SendMailDto
             {
-                // Aynı konuşmayı devam ettirebilmek için
                 ConversationId = original.ConversationId,
 
-                // Mesajı atan kişiye cevap ver
                 ReceiverMail = original.Sender?.Email,
 
-                // Konunun başına Re: ekle
                 Subject = original.Subject != null &&
                           original.Subject.StartsWith("Re:")
                     ? original.Subject
@@ -349,9 +379,9 @@ namespace IdentityMail.Web.Controllers
 
                 CategoryId = original.CategoryId,
 
-                // Orijinal mesajı göster
                 Body = $"\n\n---- Orijinal Mesaj ----\n" +
-                       $"{original.Sender?.FirstName} {original.Sender?.LastName} yazdı:\n" +
+                       $"{original.Sender?.FirstName} " +
+                       $"{original.Sender?.LastName} yazdı:\n" +
                        $"{original.Body}"
             };
 
@@ -361,10 +391,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // TASLAK KAYDET
-        // =========================
-
+        // Maili taslak olarak kaydeder veya mevcut taslağı günceller.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SaveDraft(SendMailDto sendMailDto)
@@ -376,6 +403,7 @@ namespace IdentityMail.Web.Controllers
 
             UserMessage? draft = null;
 
+            // ID varsa mevcut taslağı bul.
             if (sendMailDto.Id.HasValue)
             {
                 draft = await _context.UserMessages
@@ -385,6 +413,7 @@ namespace IdentityMail.Web.Controllers
                         x.IsDraft == true);
             }
 
+            // Taslak bulunamadıysa yeni taslak oluştur.
             if (draft == null)
             {
                 draft = new UserMessage
@@ -400,13 +429,16 @@ namespace IdentityMail.Web.Controllers
                 _context.UserMessages.Add(draft);
             }
 
+            // Taslak bilgilerini güncelle.
             draft.Subject = sendMailDto.Subject;
             draft.Body = sendMailDto.Body;
             draft.CategoryId = sendMailDto.CategoryId;
 
+            // Alıcı girilmişse kullanıcıyı bul.
             if (!string.IsNullOrWhiteSpace(sendMailDto.ReceiverMail))
             {
-                var receiver = await _userManager.FindByEmailAsync(sendMailDto.ReceiverMail.Trim());
+                var receiver = await _userManager
+                    .FindByEmailAsync(sendMailDto.ReceiverMail.Trim());
 
                 if (receiver != null)
                     draft.ReceiverId = receiver.Id;
@@ -414,14 +446,15 @@ namespace IdentityMail.Web.Controllers
 
             await _context.SaveChangesAsync();
 
-            return Json(new { success = true, id = draft.Id });
+            return Json(new
+            {
+                success = true,
+                id = draft.Id
+            });
         }
 
 
-        // =========================
-        // ALICI EMAIL DOĞRULA
-        // =========================
-
+        // Girilen email adresinin sistemde kayıtlı olup olmadığını kontrol eder.
         [HttpGet]
         public async Task<IActionResult> CheckReceiver(string email)
         {
@@ -429,11 +462,14 @@ namespace IdentityMail.Web.Controllers
                 return Json(new { exists = false });
 
             var currentUser = await _userManager.GetUserAsync(User);
+
+            // Email adresine göre kullanıcıyı bul.
             var receiver = await _userManager.FindByEmailAsync(email.Trim());
 
             if (receiver == null)
                 return Json(new { exists = false });
 
+            // Kullanıcının kendisine mail göndermesini kontrol et.
             if (currentUser != null && receiver.Id == currentUser.Id)
                 return Json(new { exists = true, isSelf = true });
 
@@ -446,10 +482,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // TASLAKLAR
-        // =========================
-
+        // Kullanıcının taslak mesajlarını listeler.
         public async Task<IActionResult> Drafts()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -469,10 +502,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // TASLAK DÜZENLE
-        // =========================
-
+        // Seçilen taslağı düzenleme ekranında açar.
         [HttpGet]
         public async Task<IActionResult> EditDraft(int id)
         {
@@ -481,6 +511,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Taslağın kullanıcıya ait olduğunu kontrol et.
             var draft = await _context.UserMessages
                 .Include(x => x.Receiver)
                 .FirstOrDefaultAsync(x =>
@@ -491,6 +522,7 @@ namespace IdentityMail.Web.Controllers
             if (draft == null)
                 return NotFound();
 
+            // Taslak bilgilerini forma aktar.
             var model = new SendMailDto
             {
                 Id = draft.Id,
@@ -506,10 +538,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // TASLAK SİL
-        // =========================
-
+        // Seçilen taslağı siler.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteDraft(int id)
@@ -519,6 +548,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Kullanıcıya ait taslağı bul.
             var draft = await _context.UserMessages
                 .FirstOrDefaultAsync(x =>
                     x.Id == id &&
@@ -529,16 +559,14 @@ namespace IdentityMail.Web.Controllers
                 return NotFound();
 
             _context.UserMessages.Remove(draft);
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Drafts");
         }
 
 
-        // =========================
-        // MAIL DETAY
-        // =========================
-
+        // Gelen mesajın detayını gösterir ve okundu olarak işaretler.
         public async Task<IActionResult> MailDetail(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -546,6 +574,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Mesajın gerçekten kullanıcıya ait olduğunu kontrol et.
             var message = await _context.UserMessages
                 .Include(x => x.Sender)
                 .Include(x => x.Category)
@@ -557,17 +586,16 @@ namespace IdentityMail.Web.Controllers
             if (message == null)
                 return NotFound();
 
+            // Mesaj açıldığında okundu olarak işaretle.
             message.IsRead = true;
+
             await _context.SaveChangesAsync();
 
             return View(message);
         }
 
 
-        // =========================
-        // GÖNDERİLEN MAIL DETAY
-        // =========================
-
+        // Gönderilen mesajın detayını gösterir.
         public async Task<IActionResult> SentMailDetail(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -575,6 +603,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Mesajın kullanıcı tarafından gönderildiğini kontrol et.
             var message = await _context.UserMessages
                 .Include(x => x.Sender)
                 .Include(x => x.Receiver)
@@ -591,10 +620,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // ÖNEMLİ YAP / ÇIKAR
-        // =========================
-
+        // Mesajı önemli olarak işaretler veya önemli durumdan çıkarır.
         public async Task<IActionResult> IsImportant(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -602,6 +628,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Mesajın kullanıcıya ait olduğunu kontrol et.
             var message = await _context.UserMessages
                 .FirstOrDefaultAsync(x =>
                     x.Id == id &&
@@ -611,17 +638,16 @@ namespace IdentityMail.Web.Controllers
             if (message == null)
                 return NotFound();
 
+            // Mevcut önemli durumunun tersini al.
             message.IsImportant = !message.IsImportant;
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
         }
 
 
-        // =========================
-        // ÇÖPE TAŞI
-        // =========================
-
+        // Mesajı silmeden çöp kutusuna taşır.
         public async Task<IActionResult> MoveToTrash(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -629,6 +655,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Mesajın gönderen veya alıcı olarak kullanıcıya ait olduğunu kontrol et.
             var message = await _context.UserMessages
                 .FirstOrDefaultAsync(x =>
                     x.Id == id &&
@@ -638,17 +665,16 @@ namespace IdentityMail.Web.Controllers
             if (message == null)
                 return NotFound();
 
+            // Soft delete uygula.
             message.IsDelete = true;
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Index");
         }
 
 
-        // =========================
-        // ÇÖPTEN GERİ AL
-        // =========================
-
+        // Çöp kutusundaki mesajı geri yükler.
         public async Task<IActionResult> RestoreMessage(int id)
         {
             var user = await _userManager.GetUserAsync(User);
@@ -656,6 +682,7 @@ namespace IdentityMail.Web.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Auth");
 
+            // Kullanıcıya ait çöp mesajını bul.
             var message = await _context.UserMessages
                 .FirstOrDefaultAsync(x =>
                     x.Id == id &&
@@ -664,17 +691,16 @@ namespace IdentityMail.Web.Controllers
             if (message == null)
                 return NotFound();
 
+            // Soft delete durumunu kaldır.
             message.IsDelete = false;
+
             await _context.SaveChangesAsync();
 
             return RedirectToAction("Trash");
         }
 
 
-        // =========================
-        // ÇÖP KUTUSU
-        // =========================
-
+        // Kullanıcının çöp kutusundaki mesajları listeler.
         public async Task<IActionResult> Trash()
         {
             var user = await _userManager.GetUserAsync(User);
@@ -696,10 +722,7 @@ namespace IdentityMail.Web.Controllers
         }
 
 
-        // =========================
-        // KATEGORİLERİ YÜKLE (KULLANICIYA ÖZEL)
-        // =========================
-
+        // Kullanıcıya ait ve genel kategorileri ViewBag'e yükler.
         private async Task LoadCategories(int userId)
         {
             ViewBag.Categories = await _context.Categories
@@ -713,13 +736,15 @@ namespace IdentityMail.Web.Controllers
                 .ToListAsync();
         }
 
-        
+
+        // Mesaj şikayet formunu açar.
         [HttpGet]
         public async Task<IActionResult> Report(int id)
         {
             var userId = int.Parse(
                 _userManager.GetUserId(User)!);
 
+            // Şikayet edilecek mesajı getir.
             var message = await _context.UserMessages
                 .Include(x => x.Sender)
                 .FirstOrDefaultAsync(x =>
@@ -729,17 +754,16 @@ namespace IdentityMail.Web.Controllers
                     x.IsDelete != true);
 
             if (message == null)
-            {
                 return NotFound();
-            }
 
-            // Kullanıcı kendi mesajına şikayet edemesin
+            // Kullanıcı kendi mesajını şikayet edemez.
             if (message.SenderId == userId)
             {
-                return BadRequest("Kendi mesajınızı şikayet edemezsiniz.");
+                return BadRequest(
+                    "Kendi mesajınızı şikayet edemezsiniz.");
             }
 
-            // Aynı kullanıcı aynı mesajı tekrar şikayet edemesin
+            // Aynı mesajın daha önce şikayet edilip edilmediğini kontrol et.
             var alreadyReported = await _context.MessageReports
                 .AnyAsync(x =>
                     x.MessageId == id &&
@@ -755,32 +779,34 @@ namespace IdentityMail.Web.Controllers
                     new { id });
             }
 
+            // Şikayet formu modelini oluştur.
             var model = new CreateMessageReportDto
             {
                 MessageId = message.Id
             };
 
             ViewBag.Subject = message.Subject;
+
             ViewBag.SenderName =
                 $"{message.Sender.FirstName} {message.Sender.LastName}";
 
             return View(model);
         }
-        // =====================================================
-        // ŞİKAYET OLUŞTUR
-        // =====================================================
 
-        
+
+        // Kullanıcının mesaj şikayetini kaydeder.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> ReportMessage(
             CreateMessageReportDto dto)
         {
+            // Form doğrulaması başarısızsa hata mesajlarıyla geri dön.
             if (!ModelState.IsValid)
             {
                 var messageForView = await _context.UserMessages
                     .Include(x => x.Sender)
-                    .FirstOrDefaultAsync(x => x.Id == dto.MessageId);
+                    .FirstOrDefaultAsync(x =>
+                        x.Id == dto.MessageId);
 
                 if (messageForView != null)
                 {
@@ -797,7 +823,7 @@ namespace IdentityMail.Web.Controllers
             var userId = int.Parse(
                 _userManager.GetUserId(User)!);
 
-            // Mesaj gerçekten bu kullanıcıya mı ait?
+            // Mesajın gerçekten bu kullanıcıya ait olduğunu kontrol et.
             var message = await _context.UserMessages
                 .FirstOrDefaultAsync(x =>
                     x.Id == dto.MessageId &&
@@ -806,18 +832,16 @@ namespace IdentityMail.Web.Controllers
                     x.IsDelete != true);
 
             if (message == null)
-            {
                 return NotFound();
-            }
 
-            // Kendi mesajını şikayet edemez
+            // Kullanıcı kendi mesajını şikayet edemez.
             if (message.SenderId == userId)
             {
                 return BadRequest(
                     "Kendi mesajınızı şikayet edemezsiniz.");
             }
 
-            // Daha önce şikayet edilmiş mi?
+            // Aynı kullanıcı aynı mesajı tekrar şikayet edemez.
             var alreadyReported = await _context.MessageReports
                 .AnyAsync(x =>
                     x.MessageId == dto.MessageId &&
@@ -833,24 +857,21 @@ namespace IdentityMail.Web.Controllers
                     new { id = dto.MessageId });
             }
 
+            // Yeni şikayet kaydı oluştur.
             var report = new MessageReport
             {
                 MessageId = dto.MessageId,
-
                 ReporterId = userId,
-
                 Reason = dto.Reason,
-
                 Description = dto.Description,
 
+                // Admin incelemesi bekleniyor.
                 Status = ReportStatus.Pending,
 
                 ReviewedById = null,
-
                 AdminNote = null,
 
                 CreatedDate = DateTime.Now,
-
                 ReviewedDate = null
             };
 
@@ -858,9 +879,7 @@ namespace IdentityMail.Web.Controllers
 
             await _context.SaveChangesAsync();
 
-            TempData["ReportSuccess"] =
-                "Mesajınız başarıyla şikayet edildi. Yönetici inceleyecektir.";
-
+            // Şikayet oluşturulduktan sonra gelen kutusuna dön.
             return RedirectToAction("Index");
         }
     }
